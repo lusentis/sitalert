@@ -7,9 +7,11 @@ import { CategoryFilter } from "./category-filter";
 import { SeverityFilter } from "./severity-filter";
 import { ConfidenceFilter } from "./confidence-filter";
 import { EventFeed } from "./event-feed";
+import { WelcomeBanner } from "./welcome-banner";
 import { Separator } from "@/components/ui/separator";
 import { Drawer } from "vaul";
 import { Activity } from "lucide-react";
+import { useOnboardingDismissed } from "@/hooks/use-onboarding";
 
 interface SidebarContentProps {
   filters: Filters;
@@ -32,6 +34,8 @@ function SidebarContent({
   onEventClick,
   selectedEventId,
 }: SidebarContentProps) {
+  const { dismissed, dismiss } = useOnboardingDismissed();
+
   return (
     <div className="flex flex-col h-full p-4 space-y-4 min-w-0">
       <div className="flex items-center gap-2">
@@ -46,6 +50,7 @@ function SidebarContent({
         )}
       </div>
       <Separator />
+      {!dismissed && <WelcomeBanner onDismiss={dismiss} />}
       <CategoryFilter
         selected={filters.categories}
         onToggle={filters.toggleCategory}
@@ -90,10 +95,15 @@ export function Sidebar(props: SidebarContentProps) {
           <Drawer.Trigger asChild>
             <button
               aria-label="Open event panel"
-              className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-card text-card-foreground border border-border rounded-full px-4 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-lg flex items-center gap-2"
+              className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-card text-card-foreground border border-border rounded-full px-4 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-lg flex items-center gap-2 transition-[transform,box-shadow] duration-150 motion-safe:active:scale-95 active:shadow-md"
             >
               <Activity className="h-4 w-4" />
               <span className="text-sm font-medium">Events</span>
+              {props.data && props.data.features.length > 0 && (
+                <span className="text-xs font-bold tabular-nums bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">
+                  {props.data.features.length}
+                </span>
+              )}
               {props.isConnected && (
                 <>
                   <span className="h-2 w-2 rounded-full bg-emerald-500 motion-safe:animate-pulse" />

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Slider } from "@/components/ui/slider";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { ChevronRight } from "lucide-react";
 
 interface ConfidenceFilterProps {
@@ -30,9 +31,14 @@ export function ConfidenceFilter({ value, onChange }: ConfidenceFilterProps) {
       {isOpen && (
         <div id="confidence-panel" className="space-y-2 pl-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">
-              Min Confidence
-            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-xs text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/40">
+                  Min Confidence
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top">LLM-assessed classification accuracy. Lower shows more events.</TooltipContent>
+            </Tooltip>
             <span className="text-xs font-medium">{displayValue}%</span>
           </div>
           <Slider

@@ -96,13 +96,20 @@ export function EventFeed({
       <ScrollArea className="flex-1 min-h-0">
         <div ref={scrollRef} role="feed" aria-busy={isLoading} className="space-y-1.5 pr-2">
           {features.length === 0 && !isLoading && (
-            <div className="text-center py-8 space-y-1">
-              <p className="text-sm text-muted-foreground">
-                No events match the current filters.
-              </p>
-              <p className="text-xs text-muted-foreground/70">
-                Try a wider time range or fewer category filters.
-              </p>
+            <div className="text-center py-10 space-y-3">
+              <div className="relative size-10 mx-auto opacity-40">
+                <div className="absolute inset-0 rounded-full border border-current" />
+                <div className="absolute inset-2.5 rounded-full border border-current" />
+                <div className="absolute top-1/2 left-1/2 size-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">
+                  All clear for these filters.
+                </p>
+                <p className="text-xs text-muted-foreground/70">
+                  Try a wider time range or fewer category filters.
+                </p>
+              </div>
             </div>
           )}
           {features.map((feature) => (

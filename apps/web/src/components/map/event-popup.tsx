@@ -35,7 +35,7 @@ export function EventPopup({ feature, onClose }: EventPopupProps) {
 
   return (
     <MapPopup longitude={lng} latitude={lat} onClose={onClose}>
-      <div className="bg-card text-card-foreground border border-border rounded-lg shadow-lg p-3 max-w-[320px] min-w-[240px]">
+      <div className="bg-card text-card-foreground border border-border rounded-lg shadow-lg p-3 max-w-[320px] min-w-[240px] motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:duration-200">
         <div className="flex items-start justify-between gap-2 mb-2">
           <h3 className="font-semibold text-sm leading-tight flex-1">
             {properties.title}

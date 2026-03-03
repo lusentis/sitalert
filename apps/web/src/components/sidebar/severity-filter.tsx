@@ -2,6 +2,7 @@
 
 import { SEVERITY_LEVELS } from "@travelrisk/shared";
 import { Slider } from "@/components/ui/slider";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface SeverityFilterProps {
   value: number;
@@ -15,9 +16,14 @@ export function SeverityFilter({ value, onChange }: SeverityFilterProps) {
   return (
     <fieldset className="space-y-2">
       <div className="flex items-center justify-between">
-        <legend className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Min Severity
-        </legend>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <legend className="text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-help border-b border-dotted border-muted-foreground/40">
+              Min Severity
+            </legend>
+          </TooltipTrigger>
+          <TooltipContent side="top">Filter by impact level (1=Minor to 5=Catastrophic).</TooltipContent>
+        </Tooltip>
         <span
           className="text-xs font-medium"
           style={{ color: level?.color }}
