@@ -47,10 +47,10 @@ export class TelegramAdapter {
           disconnect: () => Promise<void>;
         };
       };
-      const { StringSession } = await import("telegram/sessions" as string) as {
+      const { StringSession } = await import("telegram/sessions/index.js" as string) as {
         StringSession: new (session: string) => unknown;
       };
-      const { NewMessage } = await import("telegram/events" as string) as {
+      const { NewMessage } = await import("telegram/events/index.js" as string) as {
         NewMessage: new (opts: Record<string, unknown>) => unknown;
       };
 
