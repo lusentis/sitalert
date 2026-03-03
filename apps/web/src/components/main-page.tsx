@@ -96,11 +96,13 @@ export function MainPage() {
             value={filters.timeRange}
             onChange={filters.setTimeRange}
           />
-          <MapLegend />
-          <ChoroplethToggle
-            active={choroplethVisible}
-            onToggle={handleChoroplethToggle}
-          />
+          <div className="absolute bottom-16 md:bottom-4 right-4 z-10 flex flex-col items-end gap-2">
+            <MapLegend choroplethActive={choroplethVisible} />
+            <ChoroplethToggle
+              active={choroplethVisible}
+              onToggle={handleChoroplethToggle}
+            />
+          </div>
         </div>
       </div>
     </TooltipProvider>
