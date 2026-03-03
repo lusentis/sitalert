@@ -30,6 +30,9 @@ Thumbs.db
 # Testing
 coverage/
 
+# TypeScript
+*.tsbuildinfo
+
 # Drizzle
 drizzle/meta/
 

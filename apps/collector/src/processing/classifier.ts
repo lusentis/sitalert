@@ -1,0 +1,69 @@
+import { generateObject } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+import { EVENT_CATEGORIES } from "@sitalert/shared";
+
+const classificationSchema = z.object({
+  relevant: z
+    .boolean()
+    .describe("Is this a security/safety/disaster event worth tracking?"),
+  category: z
+    .enum(EVENT_CATEGORIES as unknown as [string, ...string[]])
+    .describe("Event category"),
+  severity: z
+    .number()
+    .int()
+    .min(1)
+    .max(5)
+    .describe("1=minor, 5=catastrophic"),
+  title: z.string().max(120).describe("Concise event title"),
+  summary: z.string().max(500).describe("Brief event summary"),
+  locationMentions: z
+    .array(z.string())
+    .describe("Place names mentioned in the text"),
+});
+
+export type ClassificationResult = z.infer<typeof classificationSchema>;
+
+const SYSTEM_PROMPT = `You are an event classifier for a global situation monitoring system (SitAlert).
+Your job is to analyze raw text from various sources and determine:
+1. Whether it describes a real security, safety, disaster, or crisis event worth tracking
+2. What category it falls into
+3. How severe it is (1=minor/localized, 2=moderate, 3=significant, 4=severe, 5=catastrophic)
+4. A concise title and summary
+5. Any place names or locations mentioned
+
+Be conservative with severity — only use 4-5 for events with major impact.
+Ignore opinion pieces, scheduled events, advertisements, and general news.
+Focus on actionable situational awareness information.`;
+
+export class Classifier {
+  private model: string;
+
+  constructor(model = "gpt-4o-mini") {
+    this.model = model;
+  }
+
+  async classify(rawText: string): Promise<ClassificationResult | null> {
+    try {
+      const { object } = await generateObject({
+        model: openai(this.model),
+        schema: classificationSchema,
+        system: SYSTEM_PROMPT,
+        prompt: `Analyze this text and classify it:\n\n${rawText.slice(0, 2000)}`,
+      });
+
+      if (!object.relevant) {
+        return null;
+      }
+
+      return object;
+    } catch (err: unknown) {
+      console.error(
+        "[classifier] LLM classification error:",
+        err instanceof Error ? err.message : err,
+      );
+      return null;
+    }
+  }
+}
