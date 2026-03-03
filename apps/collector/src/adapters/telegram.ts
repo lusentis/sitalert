@@ -1,28 +1,19 @@
 /**
  * Telegram adapter using GramJS.
- * This adapter is optional — it only starts if the `telegram` package is installed
- * and the required environment variables are set.
+ * Listens to all channels/groups the authenticated user has joined.
+ * The LLM classifier downstream filters out irrelevant messages.
  *
  * Required env vars: TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_SESSION_STRING
  */
 import type { Platform, RawEvent, EventCallback } from "@sitalert/shared";
-
-interface TelegramConfig {
-  channels: string[];
-}
 
 export class TelegramAdapter {
   readonly name = "telegram";
   readonly platform: Platform = "telegram";
   readonly defaultConfidence = 0.5;
 
-  private config: TelegramConfig;
   private client: unknown = null;
   private callback: EventCallback | null = null;
-
-  constructor(config: TelegramConfig) {
-    this.config = config;
-  }
 
   static isAvailable(): boolean {
     return !!(
@@ -41,7 +32,6 @@ export class TelegramAdapter {
     this.callback = callback;
 
     try {
-      // Dynamic import so the adapter doesn't crash if telegram isn't installed
       const { TelegramClient } = await import("telegram" as string) as {
         TelegramClient: new (
           session: unknown,
@@ -76,10 +66,10 @@ export class TelegramAdapter {
       await client.connect();
       this.client = client;
 
-      console.log(
-        `[telegram] Connected, monitoring ${this.config.channels.length} channels`,
-      );
+      console.log("[telegram] Connected, listening to all joined channels");
 
+      // Listen to all incoming channel/group messages — the LLM classifier
+      // downstream decides what's relevant.
       client.addEventHandler(
         (event: { message?: { peerId?: unknown; message?: string; date?: number; id?: number } }) => {
           const message = event.message;
@@ -99,7 +89,7 @@ export class TelegramAdapter {
 
           this.callback?.(raw);
         },
-        new NewMessage({ chats: this.config.channels }),
+        new NewMessage({}),
       );
     } catch (err: unknown) {
       console.error(

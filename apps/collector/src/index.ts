@@ -52,7 +52,6 @@ const OsintRssConfigSchema = z.object({
 });
 
 const OsintTelegramConfigSchema = z.object({
-  channels: z.array(z.string()),
   enabled: z.boolean(),
 });
 
@@ -206,9 +205,7 @@ async function main(): Promise<void> {
     telegramConfig.data.enabled &&
     TelegramAdapter.isAvailable()
   ) {
-    telegramAdapter = new TelegramAdapter({
-      channels: telegramConfig.data.channels,
-    });
+    telegramAdapter = new TelegramAdapter();
   }
 
   // Event handler
