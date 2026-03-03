@@ -141,11 +141,9 @@ export class ViaggiareSicuriAdapter extends BaseAdapter {
     const data: unknown = await res.json();
     const parsed = ApiResponseSchema.parse(data);
 
-    // Process both ultima_ora (breaking news) and country sheet updates
-    const allItems = [
-      ...parsed.ultima_ora,
-      ...(parsed.aggiornamentiSchedaPaese ?? []),
-    ];
+    // Only process ultima_ora (breaking news) — aggiornamentiSchedaPaese are just
+    // "section X was updated" notices with no event content, not worth LLM tokens
+    const allItems = parsed.ultima_ora;
 
     for (const item of allItems) {
       // Dedup by ID + timestamp to detect edits

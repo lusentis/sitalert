@@ -67,8 +67,9 @@ export class UsTravelAdvisoriesAdapter extends BaseAdapter {
     for (const advisory of advisories) {
       const level = parseAdvisoryLevel(advisory.Title);
 
-      // Skip Level 1 ("Exercise Normal Precautions") — too noisy
-      if (level < 2) continue;
+      // Skip Level 1-2 — "Exercise Normal/Increased Precautions" is too generic
+      // (84 countries at Level 2), wastes LLM tokens. Only emit Level 3+ (actionable).
+      if (level < 3) continue;
 
       const countryCode = advisory.Category[0]?.trim().toUpperCase() ?? "";
       if (!countryCode) continue;
