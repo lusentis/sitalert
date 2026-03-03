@@ -84,11 +84,18 @@ export async function GET(request: NextRequest) {
 
     const db = createHttpClient(databaseUrl);
 
+    // Clamp bbox to avoid PostGIS antipodal edge error when bbox spans ≥180° longitude.
+    // ST_MakeEnvelope with geography type fails when any edge spans ≥ half the globe.
+    // Empirically, ±179 works but ±179.1+ triggers the error on Neon/PostGIS.
+    const rawWest = query.bbox?.west ?? -180;
+    const rawSouth = query.bbox?.south ?? -90;
+    const rawEast = query.bbox?.east ?? 180;
+    const rawNorth = query.bbox?.north ?? 90;
     const viewportQuery = {
-      west: query.bbox?.west ?? -180,
-      south: query.bbox?.south ?? -90,
-      east: query.bbox?.east ?? 180,
-      north: query.bbox?.north ?? 90,
+      west: Math.max(rawWest, -179),
+      south: Math.max(rawSouth, -89),
+      east: Math.min(rawEast, 179),
+      north: Math.min(rawNorth, 89),
       categories: query.categories,
       minSeverity: query.minSeverity,
       minConfidence: query.minConfidence,
