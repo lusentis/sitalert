@@ -98,7 +98,13 @@ export async function GET(request: NextRequest) {
     };
 
     if (query.format === "geojson") {
-      const geojson = await queryEventsGeoJSON(db, viewportQuery);
+      // GeoJSON responses need all events in viewport for accurate category counts.
+      // Override with a higher limit unless the client explicitly set one.
+      const geojsonQuery = {
+        ...viewportQuery,
+        limit: query.limit ?? 1000,
+      };
+      const geojson = await queryEventsGeoJSON(db, geojsonQuery);
       return NextResponse.json(geojson);
     }
 
