@@ -100,16 +100,15 @@ export async function GET(request: NextRequest) {
       minSeverity: query.minSeverity,
       minConfidence: query.minConfidence,
       after: query.after ? new Date(query.after) : undefined,
-      limit: query.limit,
+      limit: query.limit ?? 100,
       offset: query.offset,
     };
 
     if (query.format === "geojson") {
-      // GeoJSON responses need all events in viewport for accurate category counts.
-      // Override with a higher limit unless the client explicitly set one.
+      // GeoJSON needs all events in viewport for accurate category counts.
       const geojsonQuery = {
         ...viewportQuery,
-        limit: query.limit ?? 1000,
+        limit: query.limit ?? 5000,
       };
       const geojson = await queryEventsGeoJSON(db, geojsonQuery);
       return NextResponse.json(geojson);
@@ -120,7 +119,7 @@ export async function GET(request: NextRequest) {
       data: events,
       meta: {
         count: events.length,
-        limit: query.limit,
+        limit: query.limit ?? 100,
         offset: query.offset,
       },
     });

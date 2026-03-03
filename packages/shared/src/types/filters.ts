@@ -18,7 +18,7 @@ export const EventsQuerySchema = z.object({
   minConfidence: z.number().min(0).max(1).default(0),
   after: z.string().datetime().optional(),
   before: z.string().datetime().optional(),
-  limit: z.number().int().min(1).max(500).default(100),
+  limit: z.number().int().min(1).max(5000).optional(),
   offset: z.number().int().min(0).default(0),
   format: z.enum(["json", "geojson"]).default("json"),
 });
