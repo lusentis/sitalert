@@ -84,7 +84,7 @@
         "miaboroshka",
         "gazaboroshka"
       ],
-      "enabled": false
+      "enabled": true
     },
     "rss": {
       "name": "News RSS Feeds",
