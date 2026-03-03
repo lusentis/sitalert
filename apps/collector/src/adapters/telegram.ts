@@ -5,6 +5,9 @@
  *
  * Required env vars: TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_SESSION_STRING
  */
+import { TelegramClient } from "telegram";
+import { StringSession } from "telegram/sessions/index.js";
+import { NewMessage } from "telegram/events/index.js";
 import type { Platform, RawEvent, EventCallback } from "@sitalert/shared";
 
 export class TelegramAdapter {
@@ -12,7 +15,7 @@ export class TelegramAdapter {
   readonly platform: Platform = "telegram";
   readonly defaultConfidence = 0.5;
 
-  private client: unknown = null;
+  private client: TelegramClient | null = null;
   private callback: EventCallback | null = null;
 
   static isAvailable(): boolean {
@@ -32,28 +35,6 @@ export class TelegramAdapter {
     this.callback = callback;
 
     try {
-      const { TelegramClient } = await import("telegram" as string) as {
-        TelegramClient: new (
-          session: unknown,
-          apiId: number,
-          apiHash: string,
-          opts: Record<string, unknown>,
-        ) => {
-          connect: () => Promise<void>;
-          addEventHandler: (
-            handler: (event: { message?: { peerId?: unknown; message?: string; date?: number; id?: number } }) => void,
-            filter: unknown,
-          ) => void;
-          disconnect: () => Promise<void>;
-        };
-      };
-      const { StringSession } = await import("telegram/sessions/index.js" as string) as {
-        StringSession: new (session: string) => unknown;
-      };
-      const { NewMessage } = await import("telegram/events/index.js" as string) as {
-        NewMessage: new (opts: Record<string, unknown>) => unknown;
-      };
-
       const apiId = parseInt(process.env["TELEGRAM_API_ID"] ?? "0", 10);
       const apiHash = process.env["TELEGRAM_API_HASH"] ?? "";
       const sessionString = process.env["TELEGRAM_SESSION_STRING"] ?? "";
@@ -71,7 +52,7 @@ export class TelegramAdapter {
       // Listen to all incoming channel/group messages — the LLM classifier
       // downstream decides what's relevant.
       client.addEventHandler(
-        (event: { message?: { peerId?: unknown; message?: string; date?: number; id?: number } }) => {
+        (event) => {
           const message = event.message;
           if (!message?.message) return;
 
@@ -101,8 +82,7 @@ export class TelegramAdapter {
 
   async stop(): Promise<void> {
     if (this.client) {
-      const client = this.client as { disconnect: () => Promise<void> };
-      await client.disconnect();
+      await this.client.disconnect();
     }
   }
 
