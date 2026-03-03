@@ -1,0 +1,31 @@
+{
+  "name": "sitalert",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=@sitalert/web",
+    "dev:collector": "turbo run dev --filter=@sitalert/collector",
+    "start:web": "turbo run start --filter=@sitalert/web",
+    "start:collector": "turbo run start --filter=@sitalert/collector",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "turbo run db:generate --filter=@sitalert/db",
+    "db:push": "turbo run db:push --filter=@sitalert/db",
+    "db:migrate": "turbo run db:migrate --filter=@sitalert/db",
+    "db:studio": "turbo run db:studio --filter=@sitalert/db",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "clean": "turbo run clean",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "turbo": "^2.4.0",
+    "typescript": "^5.7.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  }
+}

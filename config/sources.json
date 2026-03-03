@@ -1,0 +1,78 @@
+{
+  "structured": {
+    "usgs": {
+      "name": "USGS Earthquake Hazards",
+      "url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_hour.geojson",
+      "pollingInterval": 60000,
+      "enabled": true
+    },
+    "gdacs": {
+      "name": "GDACS Global Disasters",
+      "url": "https://www.gdacs.org/xml/rss.xml",
+      "pollingInterval": 300000,
+      "enabled": true
+    },
+    "nasa_firms": {
+      "name": "NASA FIRMS Active Fires",
+      "url": "https://firms.modaps.eosdis.nasa.gov/api/area/csv",
+      "pollingInterval": 900000,
+      "enabled": true
+    },
+    "emsc": {
+      "name": "EMSC Seismic Portal",
+      "url": "https://www.seismicportal.eu/fdsnws/event/1/query",
+      "pollingInterval": 60000,
+      "enabled": true
+    },
+    "reliefweb": {
+      "name": "ReliefWeb API",
+      "url": "https://api.reliefweb.int/v1/reports",
+      "pollingInterval": 900000,
+      "enabled": true
+    }
+  },
+  "osint": {
+    "telegram": {
+      "name": "Telegram Channels",
+      "channels": [
+        "bbaboroshka",
+        "nexaboroshka"
+      ],
+      "enabled": false
+    },
+    "rss": {
+      "name": "News RSS Feeds",
+      "feeds": [
+        {
+          "name": "Reuters World",
+          "url": "https://www.reutersagency.com/feed/?taxonomy=best-sectors&post_type=best"
+        },
+        {
+          "name": "BBC World",
+          "url": "https://feeds.bbci.co.uk/news/world/rss.xml"
+        },
+        {
+          "name": "Al Jazeera",
+          "url": "https://www.aljazeera.com/xml/rss/all.xml"
+        }
+      ],
+      "pollingInterval": 300000,
+      "enabled": false
+    },
+    "travel_advisories": {
+      "name": "Travel Advisories",
+      "sources": [
+        {
+          "name": "US State Department",
+          "url": "https://travel.state.gov/content/travel/en/traveladvisories/traveladvisories.html"
+        },
+        {
+          "name": "UK FCDO",
+          "url": "https://www.gov.uk/foreign-travel-advice"
+        }
+      ],
+      "pollingInterval": 21600000,
+      "enabled": false
+    }
+  }
+}

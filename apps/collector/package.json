@@ -1,0 +1,35 @@
+{
+  "name": "@sitalert/collector",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup src/index.ts --format esm --dts",
+    "start": "node dist/index.js",
+    "start:prod": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^1.2.0",
+    "@neondatabase/serverless": "^0.10.0",
+    "@sitalert/db": "workspace:*",
+    "@sitalert/shared": "workspace:*",
+    "ai": "^4.1.0",
+    "drizzle-orm": "^0.38.0",
+    "ioredis": "^5.4.0",
+    "rss-parser": "^3.13.0",
+    "ws": "^8.18.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0",
+    "@types/ws": "^8.5.0"
+  }
+}
