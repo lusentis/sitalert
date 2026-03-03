@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { Map, useMap, type MapRef, type MapViewport } from "@/components/ui/map";
+import { ChoroplethLayer } from "./choropleth-layer";
 import { EventLayer } from "./event-layer";
 import { EventPopup } from "./event-popup";
 import type { GeoJSONFeatureCollection, GeoJSONFeature } from "@travelrisk/db";
@@ -14,6 +15,8 @@ interface MapViewProps {
   onEventSelect?: (feature: GeoJSONFeature) => void;
   selectedEvent?: GeoJSONFeature | null;
   onDeselectEvent?: () => void;
+  choroplethScores?: Map<string, number>;
+  choroplethVisible?: boolean;
 }
 
 /** Inner component that fires initial bounds via useMap() */
@@ -47,6 +50,8 @@ export function MapView({
   onEventSelect,
   selectedEvent,
   onDeselectEvent,
+  choroplethScores,
+  choroplethVisible,
 }: MapViewProps) {
   const mapRef = useRef<MapRef>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -88,7 +93,8 @@ export function MapView({
     mapInstance.flyTo({
       center: selectedEvent.geometry.coordinates as [number, number],
       zoom: Math.max(mapInstance.getZoom(), 8),
-      duration: 1000,
+      duration: 1200,
+      essential: true,
     });
   }, [selectedEvent]);
 
@@ -103,6 +109,12 @@ export function MapView({
         onViewportChange={handleViewportChange}
       >
         <MapInitializer onBoundsChange={onBoundsChange} />
+        {choroplethScores && (
+          <ChoroplethLayer
+            countryScores={choroplethScores}
+            visible={choroplethVisible ?? false}
+          />
+        )}
         <EventLayer data={data} onEventClick={handleEventClick} />
         {selectedEvent && onDeselectEvent && (
           <EventPopup feature={selectedEvent} onClose={onDeselectEvent} />
