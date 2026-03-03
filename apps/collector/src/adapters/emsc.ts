@@ -22,7 +22,7 @@ const EmscResponseSchema = z.object({
       properties: EmscEventSchema,
       geometry: z.object({
         type: z.literal("Point"),
-        coordinates: z.tuple([z.number(), z.number()]),
+        coordinates: z.array(z.number()).min(2).max(3),
       }),
     }),
   ),
