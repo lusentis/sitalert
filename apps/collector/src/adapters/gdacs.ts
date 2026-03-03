@@ -71,6 +71,11 @@ export class GdacsAdapter extends BaseAdapter {
   constructor(pollingInterval = 300_000) {
     super({ defaultConfidence: 1.0, pollingInterval });
     this.parser = new Parser({
+      requestOptions: {
+        headers: {
+          "User-Agent": "sitalert/1.0 (https://github.com/sitalert)",
+        },
+      },
       customFields: {
         item: [
           ["gdacs:alertlevel", "gdacs:alertlevel"],

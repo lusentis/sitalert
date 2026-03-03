@@ -16,6 +16,11 @@ import { EmscAdapter } from "./adapters/emsc.js";
 import { GdacsAdapter } from "./adapters/gdacs.js";
 import { NasaFirmsAdapter } from "./adapters/nasa-firms.js";
 import { ReliefWebAdapter } from "./adapters/reliefweb.js";
+import { GeoNetNzAdapter } from "./adapters/geonet-nz.js";
+import { UsgsVolcanoesAdapter } from "./adapters/usgs-volcanoes.js";
+import { WhoOutbreaksAdapter } from "./adapters/who-outbreaks.js";
+import { NoaaNhcAdapter } from "./adapters/noaa-nhc.js";
+import { SmithsonianGvpAdapter } from "./adapters/smithsonian-gvp.js";
 import { RssAdapter } from "./adapters/rss.js";
 import { TravelAdvisoriesAdapter } from "./adapters/travel-advisories.js";
 import { TelegramAdapter } from "./adapters/telegram.js";
@@ -129,6 +134,41 @@ async function main(): Promise<void> {
   if (structuredConfig["reliefweb"]?.enabled) {
     const adapter = new ReliefWebAdapter(
       structuredConfig["reliefweb"].pollingInterval,
+    );
+    adapters.push(adapter);
+  }
+
+  if (structuredConfig["geonet_nz"]?.enabled) {
+    const adapter = new GeoNetNzAdapter(
+      structuredConfig["geonet_nz"].pollingInterval,
+    );
+    adapters.push(adapter);
+  }
+
+  if (structuredConfig["usgs_volcanoes"]?.enabled) {
+    const adapter = new UsgsVolcanoesAdapter(
+      structuredConfig["usgs_volcanoes"].pollingInterval,
+    );
+    adapters.push(adapter);
+  }
+
+  if (structuredConfig["who_outbreaks"]?.enabled) {
+    const adapter = new WhoOutbreaksAdapter(
+      structuredConfig["who_outbreaks"].pollingInterval,
+    );
+    adapters.push(adapter);
+  }
+
+  if (structuredConfig["noaa_nhc"]?.enabled) {
+    const adapter = new NoaaNhcAdapter(
+      structuredConfig["noaa_nhc"].pollingInterval,
+    );
+    adapters.push(adapter);
+  }
+
+  if (structuredConfig["smithsonian_gvp"]?.enabled) {
+    const adapter = new SmithsonianGvpAdapter(
+      structuredConfig["smithsonian_gvp"].pollingInterval,
     );
     adapters.push(adapter);
   }

@@ -42,7 +42,7 @@ export class UsgsAdapter extends BaseAdapter {
   private seenIds = new Set<string>();
 
   private static readonly FEED_URL =
-    "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_hour.geojson";
+    "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson";
 
   constructor(pollingInterval = 60_000) {
     super({ defaultConfidence: 1.0, pollingInterval });
@@ -59,6 +59,7 @@ export class UsgsAdapter extends BaseAdapter {
 
     for (const feature of data.features) {
       if (this.seenIds.has(feature.id)) continue;
+      if (feature.properties.mag < 5) continue;
       this.seenIds.add(feature.id);
 
       const [lng, lat] = feature.geometry.coordinates;

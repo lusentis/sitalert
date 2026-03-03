@@ -30,7 +30,7 @@ function SidebarContent({
   onEventClick,
 }: SidebarContentProps) {
   return (
-    <div className="flex flex-col h-full p-4 space-y-4">
+    <div className="flex flex-col h-full p-4 space-y-4 min-w-0">
       <div className="flex items-center gap-2">
         <Activity className="h-5 w-5 text-primary" />
         <h1 className="text-lg font-bold">SitAlert</h1>
@@ -39,6 +39,7 @@ function SidebarContent({
       <CategoryFilter
         selected={filters.categories}
         onToggle={filters.toggleCategory}
+        onSetAll={() => filters.setCategories([] as string[])}
         counts={counts}
       />
       <SeverityFilter
@@ -100,7 +101,7 @@ export function Sidebar(props: SidebarProps) {
   }
 
   return (
-    <aside className="w-[380px] shrink-0 h-screen bg-card border-r border-border overflow-y-auto">
+    <aside className="w-[380px] shrink-0 h-screen bg-card border-r border-border overflow-y-auto overflow-x-hidden">
       <SidebarContent {...props} />
       {props.isConnected && (
         <div className="px-4 pb-3">

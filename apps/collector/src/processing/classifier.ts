@@ -40,7 +40,7 @@ Focus on actionable situational awareness information.`;
 export class Classifier {
   private model: string;
 
-  constructor(model = "gpt-4o-mini") {
+  constructor(model = "gpt-5-nano") {
     this.model = model;
   }
 

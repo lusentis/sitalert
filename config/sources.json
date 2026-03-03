@@ -2,7 +2,13 @@
   "structured": {
     "usgs": {
       "name": "USGS Earthquake Hazards",
-      "url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_hour.geojson",
+      "url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson",
+      "pollingInterval": 60000,
+      "enabled": true
+    },
+    "emsc": {
+      "name": "EMSC Seismic Portal",
+      "url": "https://www.seismicportal.eu/fdsnws/event/1/query?format=json&limit=20",
       "pollingInterval": 60000,
       "enabled": true
     },
@@ -18,16 +24,40 @@
       "pollingInterval": 900000,
       "enabled": true
     },
-    "emsc": {
-      "name": "EMSC Seismic Portal",
-      "url": "https://www.seismicportal.eu/fdsnws/event/1/query",
+    "reliefweb": {
+      "name": "ReliefWeb Disasters",
+      "url": "https://reliefweb.int/disasters/rss.xml",
+      "pollingInterval": 900000,
+      "enabled": true
+    },
+    "usgs_volcanoes": {
+      "name": "USGS Volcano Hazards",
+      "url": "https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes",
+      "pollingInterval": 3600000,
+      "enabled": true
+    },
+    "who_outbreaks": {
+      "name": "WHO Disease Outbreak News",
+      "url": "https://www.who.int/api/news/diseaseoutbreaknews",
+      "pollingInterval": 21600000,
+      "enabled": true
+    },
+    "noaa_nhc": {
+      "name": "NOAA National Hurricane Center",
+      "url": "https://www.nhc.noaa.gov/gis-at.xml",
+      "pollingInterval": 600000,
+      "enabled": true
+    },
+    "geonet_nz": {
+      "name": "GeoNet New Zealand Earthquakes",
+      "url": "https://api.geonet.org.nz/quake?MMI=3",
       "pollingInterval": 60000,
       "enabled": true
     },
-    "reliefweb": {
-      "name": "ReliefWeb API",
-      "url": "https://api.reliefweb.int/v1/reports",
-      "pollingInterval": 900000,
+    "smithsonian_gvp": {
+      "name": "Smithsonian Global Volcanism Program",
+      "url": "https://volcano.si.edu/news/WeeklyVolcanoRSS.xml",
+      "pollingInterval": 86400000,
       "enabled": true
     }
   },
@@ -36,7 +66,23 @@
       "name": "Telegram Channels",
       "channels": [
         "bbaboroshka",
-        "nexaboroshka"
+        "nexaboroshka",
+        "bazaboroshka",
+        "shot_shot",
+        "vlozhkaeconom",
+        "interfaxonline",
+        "rian_ru",
+        "taboroshka",
+        "CITeam_en",
+        "inikitinamedia",
+        "ryaboroshka",
+        "UkrainaOnlline",
+        "legitimniy",
+        "TCH_channel",
+        "zaboroshka",
+        "bbcukrainian",
+        "miaboroshka",
+        "gazaboroshka"
       ],
       "enabled": false
     },
@@ -54,6 +100,26 @@
         {
           "name": "Al Jazeera",
           "url": "https://www.aljazeera.com/xml/rss/all.xml"
+        },
+        {
+          "name": "France24",
+          "url": "https://www.france24.com/en/rss"
+        },
+        {
+          "name": "DW News",
+          "url": "https://rss.dw.com/rdf/rss-en-all"
+        },
+        {
+          "name": "NHK World",
+          "url": "https://www3.nhk.or.jp/rss/news/cat0.xml"
+        },
+        {
+          "name": "ProMED",
+          "url": "https://promedmail.org/feed/"
+        },
+        {
+          "name": "ANSA English",
+          "url": "https://www.ansa.it/english/news/rss.xml"
         }
       ],
       "pollingInterval": 300000,

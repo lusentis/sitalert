@@ -1,29 +1,14 @@
-import { z } from "zod";
+import Parser from "rss-parser";
 import { BaseAdapter } from "./base.js";
 import type { Platform, RawEvent, EventCategory } from "@sitalert/shared";
 
-const ReliefWebFieldsSchema = z.object({
-  title: z.string(),
-  body: z.string().optional(),
-  "date.created": z.string().optional(),
-  "country.name": z.union([z.string(), z.array(z.string())]).optional(),
-  status: z.string().optional(),
-  url: z.string().url().optional(),
-});
-
-const ReliefWebItemSchema = z.object({
-  id: z.string(),
-  fields: ReliefWebFieldsSchema,
-});
-
-const ReliefWebResponseSchema = z.object({
-  data: z.array(ReliefWebItemSchema),
-});
-
-const STATUS_SEVERITY: Record<string, number> = {
-  ongoing: 3,
-  alert: 4,
-  past: 1,
+type ReliefWebItem = {
+  guid: string;
+  title: string;
+  link: string;
+  pubDate: string;
+  contentSnippet?: string;
+  categories?: string[];
 };
 
 function inferCategory(title: string): EventCategory {
@@ -43,73 +28,73 @@ function inferCategory(title: string): EventCategory {
 
 export class ReliefWebAdapter extends BaseAdapter {
   readonly name = "reliefweb";
-  readonly platform: Platform = "api";
+  readonly platform: Platform = "rss";
 
-  private seenIds = new Set<string>();
+  private seenGuids = new Set<string>();
+  private parser: Parser<Record<string, unknown>, ReliefWebItem>;
 
-  private static readonly API_URL =
-    "https://api.reliefweb.int/v1/reports?appname=sitalert&limit=20&filter[field]=date.created&filter[value][from]=now-1d&fields[include][]=title&fields[include][]=body&fields[include][]=date.created&fields[include][]=country.name&fields[include][]=status&fields[include][]=url";
+  private static readonly FEED_URL = "https://reliefweb.int/disasters/rss.xml?status=alert&status=current&status=ongoing";
 
   constructor(pollingInterval = 900_000) {
     super({ defaultConfidence: 0.8, pollingInterval });
+    this.parser = new Parser({
+      requestOptions: {
+        headers: {
+          "User-Agent": "sitalert/1.0 (https://github.com/sitalert)",
+        },
+      },
+    });
   }
 
   protected async poll(): Promise<void> {
-    const response = await fetch(ReliefWebAdapter.API_URL);
+    // Fetch manually to control headers and avoid rss-parser's HTTP client issues
+    const response = await fetch(ReliefWebAdapter.FEED_URL, {
+      headers: { "User-Agent": "sitalert/1.0 (https://github.com/sitalert)" },
+    });
     if (!response.ok) {
-      throw new Error(`ReliefWeb API returned ${response.status}`);
+      throw new Error(`ReliefWeb RSS returned ${response.status}`);
     }
+    const xml = await response.text();
+    const feed = await this.parser.parseString(xml);
 
-    const json: unknown = await response.json();
-    const data = ReliefWebResponseSchema.parse(json);
+    for (const item of feed.items) {
+      const guid = item.guid;
+      if (!guid || this.seenGuids.has(guid)) continue;
+      this.seenGuids.add(guid);
 
-    for (const item of data.data) {
-      if (this.seenIds.has(item.id)) continue;
-      this.seenIds.add(item.id);
-
-      const { title, body, status, url } = item.fields;
-      const dateCreated = item.fields["date.created"];
-      const countryName = item.fields["country.name"];
-
-      const severity = STATUS_SEVERITY[status ?? ""] ?? 2;
+      const title = item.title ?? "Unknown ReliefWeb disaster";
       const category = inferCategory(title);
 
-      const countries = Array.isArray(countryName)
-        ? countryName
-        : countryName
-          ? [countryName]
-          : [];
-      const locationName = countries.length > 0 ? countries.join(", ") : undefined;
+      // Extract country names from RSS categories (filter out GLIDE codes like "TC-2026-000009-MDG")
+      const countries = item.categories ?? [];
+      const countryNames = countries.filter((c) => !/-\d{4}-/.test(c));
+      const locationName = countryNames.length > 0 ? countryNames.join(", ") : undefined;
 
       const raw: RawEvent = {
         sourceAdapter: this.name,
         platform: this.platform,
-        externalId: `reliefweb-${item.id}`,
-        rawText: body ? `${title}\n\n${body.slice(0, 1000)}` : title,
-        rawData: {
-          status,
-          countries,
-        },
-        timestamp: dateCreated
-          ? new Date(dateCreated).toISOString()
+        externalId: `reliefweb-${guid}`,
+        rawText: `${title}\n\n${item.contentSnippet ?? ""}`.slice(0, 1500),
+        timestamp: item.pubDate
+          ? new Date(item.pubDate).toISOString()
           : new Date().toISOString(),
         locationName,
         category,
-        severity,
+        severity: 3,
         confidence: this.defaultConfidence,
         title,
-        summary: body ? body.slice(0, 500) : title,
-        url,
+        summary: item.contentSnippet?.slice(0, 500) ?? title,
+        url: item.link,
         media: [],
       };
 
       this.emit(raw);
     }
 
-    // Prune old IDs
-    if (this.seenIds.size > 10_000) {
-      const arr = Array.from(this.seenIds);
-      this.seenIds = new Set(arr.slice(arr.length - 5_000));
+    // Prune old GUIDs
+    if (this.seenGuids.size > 10_000) {
+      const arr = Array.from(this.seenGuids);
+      this.seenGuids = new Set(arr.slice(arr.length - 5_000));
     }
   }
 }

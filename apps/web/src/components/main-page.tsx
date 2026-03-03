@@ -1,15 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { GeoJSONFeature } from "@sitalert/db";
-import type { EventStats } from "@sitalert/db";
 import { useFilters } from "@/hooks/use-filters";
 import { useMapEvents, type BBox } from "@/hooks/use-map-events";
 import { useEventStream } from "@/hooks/use-event-stream";
 import { MapView } from "@/components/map/map-view";
 import { Sidebar } from "@/components/sidebar/sidebar";
 import { TimelineBar } from "@/components/timeline/timeline-bar";
-import { fetchStats } from "@/lib/api-client";
 
 export function MainPage() {
   const filters = useFilters();
@@ -17,7 +15,6 @@ export function MainPage() {
   const [selectedEvent, setSelectedEvent] = useState<GeoJSONFeature | null>(
     null,
   );
-  const [stats, setStats] = useState<EventStats | null>(null);
 
   const { data, isLoading, refetch } = useMapEvents({
     bbox,
@@ -36,22 +33,16 @@ export function MainPage() {
     }
   }, [lastEvent, refetch]);
 
-  // Load stats
-  useEffect(() => {
-    fetchStats()
-      .then(setStats)
-      .catch(() => {
-        // Stats are non-critical; swallow errors
-      });
-
-    const interval = setInterval(() => {
-      fetchStats()
-        .then(setStats)
-        .catch(() => {});
-    }, 60_000);
-
-    return () => clearInterval(interval);
-  }, []);
+  // Derive category counts from loaded data so they match visible events
+  const categoryCounts = useMemo(() => {
+    if (!data) return undefined;
+    const counts: Record<string, number> = {};
+    for (const f of data.features) {
+      const cat = f.properties.category;
+      counts[cat] = (counts[cat] ?? 0) + 1;
+    }
+    return counts;
+  }, [data]);
 
   const handleBoundsChange = useCallback((newBbox: BBox) => {
     setBbox(newBbox);
@@ -73,7 +64,7 @@ export function MainPage() {
         lastStreamEvent={lastEvent}
         isLoading={isLoading}
         isConnected={isConnected}
-        counts={stats?.byCategory}
+        counts={categoryCounts}
         onEventClick={handleEventSelect}
       />
       <div className="relative flex-1">

@@ -20,6 +20,17 @@ export abstract class BaseAdapter {
     this.callback = callback;
     this.consecutiveErrors = 0;
     await this.init();
+    // Run first poll immediately, then schedule subsequent ones
+    try {
+      await this.poll();
+      this.consecutiveErrors = 0;
+    } catch (err: unknown) {
+      this.consecutiveErrors++;
+      console.error(
+        `[${this.name}] Initial poll error:`,
+        err instanceof Error ? err.message : err,
+      );
+    }
     this.scheduleNext();
   }
 

@@ -35,7 +35,7 @@ export function EventCard({ feature, onClick }: EventCardProps) {
   return (
     <button
       onClick={() => onClick(feature)}
-      className="w-full text-left p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
+      className="w-full text-left p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors overflow-hidden"
     >
       <div className="flex items-start gap-2">
         {CategoryIcon && categoryMeta && (
@@ -48,7 +48,7 @@ export function EventCard({ feature, onClick }: EventCardProps) {
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
-            <h4 className="text-sm font-medium truncate flex-1">
+            <h4 className="text-sm font-medium line-clamp-2 flex-1">
               {properties.title}
             </h4>
             {isNew && <NewBadge />}

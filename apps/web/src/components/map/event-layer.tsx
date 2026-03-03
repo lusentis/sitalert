@@ -219,6 +219,15 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
       const geometry = feature.geometry;
 
       if (geometry.type === "Point" && onEventClickRef.current) {
+        // MapLibre flattens nested objects to JSON strings
+        let sources: Array<{ name: string; platform: string; url?: string }> = [];
+        try {
+          const raw = feature.properties?.["sources"];
+          sources = typeof raw === "string" ? JSON.parse(raw) : Array.isArray(raw) ? raw : [];
+        } catch {
+          // ignore parse errors
+        }
+
         const geoFeature: GeoJSONFeature = {
           type: "Feature",
           geometry: {
@@ -237,6 +246,7 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
             timestamp: feature.properties?.["timestamp"] as string,
             ageMinutes: Number(feature.properties?.["ageMinutes"]),
             sourceCount: Number(feature.properties?.["sourceCount"]),
+            sources,
           },
         };
         onEventClickRef.current(geoFeature);
@@ -259,10 +269,13 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
 
     map.on("click", CLUSTER_LAYER, handleClusterClick);
     map.on("click", UNCLUSTERED_LAYER, handlePointClick);
+    map.on("click", PULSE_LAYER, handlePointClick);
     map.on("mouseenter", CLUSTER_LAYER, handleMouseEnterCluster);
     map.on("mouseleave", CLUSTER_LAYER, handleMouseLeaveCluster);
     map.on("mouseenter", UNCLUSTERED_LAYER, handleMouseEnterPoint);
     map.on("mouseleave", UNCLUSTERED_LAYER, handleMouseLeavePoint);
+    map.on("mouseenter", PULSE_LAYER, handleMouseEnterPoint);
+    map.on("mouseleave", PULSE_LAYER, handleMouseLeavePoint);
 
     // Pulse animation
     let pulsePhase = 0;
@@ -286,10 +299,13 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
 
       map.off("click", CLUSTER_LAYER, handleClusterClick);
       map.off("click", UNCLUSTERED_LAYER, handlePointClick);
+      map.off("click", PULSE_LAYER, handlePointClick);
       map.off("mouseenter", CLUSTER_LAYER, handleMouseEnterCluster);
       map.off("mouseleave", CLUSTER_LAYER, handleMouseLeaveCluster);
       map.off("mouseenter", UNCLUSTERED_LAYER, handleMouseEnterPoint);
       map.off("mouseleave", UNCLUSTERED_LAYER, handleMouseLeavePoint);
+      map.off("mouseenter", PULSE_LAYER, handleMouseEnterPoint);
+      map.off("mouseleave", PULSE_LAYER, handleMouseLeavePoint);
 
       if (layersAddedRef.current) {
         if (map.getLayer(PULSE_LAYER)) map.removeLayer(PULSE_LAYER);

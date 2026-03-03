@@ -35,7 +35,7 @@ export class EmscAdapter extends BaseAdapter {
   private seenIds = new Set<string>();
 
   private static readonly FEED_URL =
-    "https://www.seismicportal.eu/fdsnws/event/1/query?format=json&limit=20&minmag=3";
+    "https://www.seismicportal.eu/fdsnws/event/1/query?format=json&limit=20";
 
   constructor(pollingInterval = 60_000) {
     super({ defaultConfidence: 1.0, pollingInterval });
@@ -54,6 +54,7 @@ export class EmscAdapter extends BaseAdapter {
       const { unid, lat, lon, mag, flynn_region, time } = feature.properties;
 
       if (this.seenIds.has(unid)) continue;
+      if (mag < 5) continue;
       this.seenIds.add(unid);
 
       const severity = magnitudeToSeverity(mag);

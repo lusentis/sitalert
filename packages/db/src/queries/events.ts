@@ -52,7 +52,8 @@ export async function queryEventsInViewport(
   }
 
   if (after) {
-    conditions.push(gte(events.timestamp, after));
+    // Use createdAt so newly ingested historical events (e.g. WHO outbreaks) still appear
+    conditions.push(gte(events.createdAt, after));
   }
 
   const rows = await db
@@ -92,6 +93,7 @@ export interface GeoJSONFeature {
     timestamp: string;
     ageMinutes: number;
     sourceCount: number;
+    sources: Array<{ name: string; platform: string; url?: string }>;
   };
 }
 
@@ -127,6 +129,9 @@ export async function queryEventsGeoJSON(
         (Date.now() - row.timestamp.getTime()) / 60_000,
       ),
       sourceCount: Array.isArray(row.sources) ? row.sources.length : 0,
+      sources: Array.isArray(row.sources)
+        ? row.sources.map((s) => ({ name: s.name, platform: s.platform, url: s.url }))
+        : [],
     },
   }));
 

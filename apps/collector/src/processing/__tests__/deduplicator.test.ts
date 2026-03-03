@@ -129,7 +129,7 @@ describe("Deduplicator.merge", () => {
     expect(result.severity).toBe(5); // existing severity is higher
   });
 
-  it("should aggregate sources from both existing and new", () => {
+  it("should aggregate sources from different adapters", () => {
     const dedup = new Deduplicator(null as never, 0.6);
 
     const existingEvent = {
@@ -162,5 +162,41 @@ describe("Deduplicator.merge", () => {
     ]);
 
     expect(result.sources).toHaveLength(3);
+  });
+
+  it("should deduplicate sources from the same adapter", () => {
+    const dedup = new Deduplicator(null as never, 0.6);
+
+    const existingEvent = {
+      id: "existing-id",
+      title: "Test",
+      summary: "test",
+      category: "natural_disaster" as const,
+      severity: 3,
+      confidence: 0.9,
+      location: "",
+      locationName: "Test",
+      countryCode: null,
+      timestamp: new Date(),
+      sources: [
+        { platform: "api" as const, name: "emsc", retrievedAt: "2023-01-01T00:00:00Z" },
+      ],
+      media: [],
+      rawText: null,
+      clusterId: null,
+      expiresAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lat: 0,
+      lng: 0,
+    };
+
+    const result = dedup.merge(existingEvent, 3, [
+      { platform: "api", name: "emsc", retrievedAt: "2023-01-01T01:00:00Z" },
+    ]);
+
+    // Should NOT add a second "emsc" entry — just update retrievedAt
+    expect(result.sources).toHaveLength(1);
+    expect((result.sources[0] as Record<string, unknown>).retrievedAt).toBe("2023-01-01T01:00:00Z");
   });
 });

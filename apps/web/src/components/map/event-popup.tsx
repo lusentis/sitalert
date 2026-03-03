@@ -6,7 +6,7 @@ import { formatRelativeTime, type EventCategory } from "@sitalert/shared";
 import { MapPopup } from "@/components/ui/map";
 import { Badge } from "@/components/ui/badge";
 import { SeverityBadge } from "@/components/common/severity-badge";
-import { MapPin, Clock, X } from "lucide-react";
+import { MapPin, Clock, X, ExternalLink, Layers } from "lucide-react";
 import { CATEGORY_ICONS } from "@/lib/category-icons";
 
 interface EventPopupProps {
@@ -16,6 +16,12 @@ interface EventPopupProps {
 
 function isEventCategory(value: string): value is EventCategory {
   return value in CATEGORY_METADATA;
+}
+
+function formatSourceName(name: string): string {
+  return name
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export function EventPopup({ feature, onClose }: EventPopupProps) {
@@ -29,9 +35,12 @@ export function EventPopup({ feature, onClose }: EventPopupProps) {
     ? CATEGORY_ICONS[categoryKey]
     : null;
 
+  const sources = properties.sources ?? [];
+  const firstUrl = sources.find((s) => s.url)?.url;
+
   return (
     <MapPopup longitude={lng} latitude={lat} onClose={onClose}>
-      <div className="bg-card text-card-foreground border border-border rounded-lg shadow-lg p-3 max-w-[280px] min-w-[220px]">
+      <div className="bg-card text-card-foreground border border-border rounded-lg shadow-lg p-3 max-w-[320px] min-w-[240px]">
         <div className="flex items-start justify-between gap-2 mb-2">
           <h3 className="font-semibold text-sm leading-tight flex-1">
             {properties.title}
@@ -73,9 +82,44 @@ export function EventPopup({ feature, onClose }: EventPopupProps) {
         </div>
 
         {properties.summary && (
-          <p className="text-xs text-muted-foreground line-clamp-3">
+          <p className="text-xs text-muted-foreground line-clamp-3 mb-2">
             {properties.summary}
           </p>
+        )}
+
+        {sources.length > 0 && (
+          <div className="flex items-start gap-1 text-xs text-muted-foreground mb-2">
+            <Layers className="h-3 w-3 shrink-0 mt-0.5" />
+            <div className="flex flex-wrap gap-1">
+              {sources.map((source, i) =>
+                source.url ? (
+                  <a
+                    key={i}
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    {formatSourceName(source.name)}
+                  </a>
+                ) : (
+                  <span key={i}>{formatSourceName(source.name)}</span>
+                ),
+              )}
+            </div>
+          </div>
+        )}
+
+        {firstUrl && (
+          <a
+            href={firstUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+          >
+            <ExternalLink className="h-3 w-3" />
+            View source
+          </a>
         )}
       </div>
     </MapPopup>

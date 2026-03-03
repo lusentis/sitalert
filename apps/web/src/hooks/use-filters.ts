@@ -55,6 +55,13 @@ export function useFilters() {
     [setFilters],
   );
 
+  const setCategories = useCallback(
+    (categories: string[]) => {
+      setFilters((prev) => ({ ...prev, categories }));
+    },
+    [setFilters],
+  );
+
   const setTimeRange = useCallback(
     (value: TimeRange) => {
       setFilters((prev) => ({ ...prev, timeRange: value }));
@@ -71,6 +78,7 @@ export function useFilters() {
     ...filters,
     after,
     toggleCategory,
+    setCategories,
     setMinSeverity,
     setMinConfidence,
     setTimeRange,

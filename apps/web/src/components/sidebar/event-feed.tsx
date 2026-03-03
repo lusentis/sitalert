@@ -53,6 +53,7 @@ export function EventFeed({
             timestamp: lastStreamEvent.timestamp,
             ageMinutes: ageInMinutes(lastStreamEvent.timestamp),
             sourceCount: lastStreamEvent.sources.length,
+            sources: lastStreamEvent.sources.map((s) => ({ name: s.name, platform: s.platform, url: s.url })),
           },
         };
         featureList.unshift(sseFeature);
@@ -82,7 +83,7 @@ export function EventFeed({
   void newEventIds;
 
   return (
-    <div className="flex-1 min-h-0">
+    <div className="flex-1 min-h-0 min-w-0">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           Events ({features.length})

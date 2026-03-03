@@ -15,7 +15,8 @@ export async function getStats24h(db: DbClient): Promise<EventStats> {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   const activeCondition = and(
-    gte(events.timestamp, since),
+    // Use createdAt so newly ingested historical events (e.g. WHO outbreaks) are counted
+    gte(events.createdAt, since),
     or(isNull(events.expiresAt), gte(events.expiresAt, new Date())),
   );
 
