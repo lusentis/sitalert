@@ -33,6 +33,15 @@ Your job is to analyze raw text from various sources and determine:
 4. A concise title and summary
 5. Any place names or locations mentioned
 
+IMPORTANT rules for title and summary:
+- ALWAYS write in English, regardless of the input language (translate if needed).
+- Write from a neutral, universal perspective. Do NOT reference specific nationalities
+  (e.g. "US citizens", "Italian nationals", "connazionali") or government-specific advice
+  (e.g. "register with the embassy", "contact the consulate").
+- Focus on WHAT is happening and WHERE, not travel advice for any specific country's citizens.
+- Example: instead of "US citizens should avoid travel to X due to Y",
+  write "X: Y poses significant risk" or "Ongoing Y situation in X".
+
 Be conservative with severity — only use 4-5 for events with major impact.
 Ignore opinion pieces, scheduled events, advertisements, and general news.
 Focus on actionable situational awareness information.`;
