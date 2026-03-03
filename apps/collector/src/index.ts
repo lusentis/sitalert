@@ -22,7 +22,8 @@ import { WhoOutbreaksAdapter } from "./adapters/who-outbreaks.js";
 import { NoaaNhcAdapter } from "./adapters/noaa-nhc.js";
 import { SmithsonianGvpAdapter } from "./adapters/smithsonian-gvp.js";
 import { RssAdapter } from "./adapters/rss.js";
-import { TravelAdvisoriesAdapter } from "./adapters/travel-advisories.js";
+import { UsTravelAdvisoriesAdapter } from "./adapters/us-travel-advisories.js";
+import { ViaggiareSicuriAdapter } from "./adapters/viaggiaresicuri.js";
 import { TelegramAdapter } from "./adapters/telegram.js";
 import type { BaseAdapter } from "./adapters/base.js";
 
@@ -188,8 +189,11 @@ async function main(): Promise<void> {
   // Travel advisories
   const travelConfig = osintConfig["travel_advisories"];
   if (travelConfig && typeof travelConfig === "object" && "enabled" in travelConfig && travelConfig.enabled) {
-    const adapter = new TravelAdvisoriesAdapter();
-    adapters.push(adapter);
+    const usAdapter = new UsTravelAdvisoriesAdapter();
+    adapters.push(usAdapter);
+
+    const vsAdapter = new ViaggiareSicuriAdapter();
+    adapters.push(vsAdapter);
   }
 
   // Telegram (optional)

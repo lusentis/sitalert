@@ -130,15 +130,15 @@
       "sources": [
         {
           "name": "US State Department",
-          "url": "https://travel.state.gov/content/travel/en/traveladvisories/traveladvisories.html"
+          "url": "https://cadataapi.state.gov/api/TravelAdvisories"
         },
         {
-          "name": "UK FCDO",
-          "url": "https://www.gov.uk/foreign-travel-advice"
+          "name": "ViaggiareSicuri (Italian MFA)",
+          "url": "https://www.viaggiaresicuri.it/schede_paese/pdf/"
         }
       ],
-      "pollingInterval": 21600000,
-      "enabled": false
+      "pollingInterval": 1800000,
+      "enabled": true
     }
   }
 }
