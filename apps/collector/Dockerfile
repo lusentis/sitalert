@@ -3,7 +3,7 @@ RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 FROM base AS builder
 WORKDIR /app
-COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json .npmrc ./
 COPY packages/shared/package.json packages/shared/
 COPY packages/db/package.json packages/db/
 COPY apps/collector/package.json apps/collector/
