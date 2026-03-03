@@ -76,17 +76,21 @@ export function MapView({
   const handleEventClick = useCallback(
     (feature: GeoJSONFeature) => {
       onEventSelect?.(feature);
-      const mapInstance = mapRef.current;
-      if (mapInstance) {
-        mapInstance.flyTo({
-          center: feature.geometry.coordinates as [number, number],
-          zoom: Math.max(mapInstance.getZoom(), 8),
-          duration: 1000,
-        });
-      }
     },
     [onEventSelect],
   );
+
+  // Fly to the selected event (triggered by both map clicks and sidebar clicks)
+  useEffect(() => {
+    const mapInstance = mapRef.current;
+    if (!selectedEvent || !mapInstance) return;
+
+    mapInstance.flyTo({
+      center: selectedEvent.geometry.coordinates as [number, number],
+      zoom: Math.max(mapInstance.getZoom(), 8),
+      duration: 1000,
+    });
+  }, [selectedEvent]);
 
   return (
     <div className="relative flex-1 h-full">
