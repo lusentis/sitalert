@@ -17,7 +17,6 @@ export function MainPage() {
   );
 
   const { data, isLoading, refetch } = useMapEvents({
-    bbox,
     categories: filters.categories,
     minSeverity: filters.minSeverity,
     minConfidence: filters.minConfidence,

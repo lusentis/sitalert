@@ -6,10 +6,10 @@ import type { EventCategory } from "@sitalert/shared";
 type DbClient = HttpClient | PoolClient;
 
 export interface ViewportQuery {
-  west: number;
-  south: number;
-  east: number;
-  north: number;
+  west?: number;
+  south?: number;
+  east?: number;
+  north?: number;
   categories?: EventCategory[];
   minSeverity?: number;
   minConfidence?: number;
@@ -40,12 +40,19 @@ export async function queryEventsInViewport(
     offset = 0,
   } = query;
 
+  const hasBbox = west != null && south != null && east != null && north != null;
+
   const conditions = [
-    sql`ST_Intersects(${events.location}, ST_MakeEnvelope(${west}, ${south}, ${east}, ${north}, 4326)::geography)`,
     gte(events.severity, minSeverity),
     gte(events.confidence, minConfidence),
     or(isNull(events.expiresAt), gte(events.expiresAt, new Date())),
   ];
+
+  if (hasBbox) {
+    conditions.push(
+      sql`ST_Intersects(${events.location}, ST_MakeEnvelope(${west}, ${south}, ${east}, ${north}, 4326)::geography)`,
+    );
+  }
 
   if (categories && categories.length > 0) {
     conditions.push(inArray(events.category, categories));

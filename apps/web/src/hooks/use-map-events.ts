@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GeoJSONFeatureCollection } from "@sitalert/db";
 import { fetchEventsGeoJSON } from "@/lib/api-client";
-import { VIEWPORT_DEBOUNCE_MS } from "@/lib/constants";
 
 export interface BBox {
   west: number;
@@ -13,7 +12,6 @@ export interface BBox {
 }
 
 interface UseMapEventsOptions {
-  bbox: BBox | null;
   categories: string[];
   minSeverity: number;
   minConfidence: number;
@@ -27,18 +25,20 @@ interface UseMapEventsReturn {
   refetch: () => void;
 }
 
+/**
+ * Fetches all events matching the current filters (no bbox — we get everything).
+ * The map handles viewport clipping natively; the sidebar can filter by bbox client-side.
+ * Refetches only when filters change or refetch() is called (e.g. on SSE event).
+ */
 export function useMapEvents(options: UseMapEventsOptions): UseMapEventsReturn {
-  const { bbox, categories, minSeverity, minConfidence, after } = options;
+  const { categories, minSeverity, minConfidence, after } = options;
   const [data, setData] = useState<GeoJSONFeatureCollection | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchIdRef = useRef(0);
 
   const doFetch = useCallback(() => {
-    if (!bbox) return;
-
     // Cancel any in-flight request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -53,7 +53,6 @@ export function useMapEvents(options: UseMapEventsOptions): UseMapEventsReturn {
 
     fetchEventsGeoJSON(
       {
-        bbox,
         categories: categories.length > 0 ? categories : undefined,
         minSeverity,
         minConfidence,
@@ -62,7 +61,6 @@ export function useMapEvents(options: UseMapEventsOptions): UseMapEventsReturn {
       controller.signal,
     )
       .then((result) => {
-        // Only update if this is still the latest request
         if (currentFetchId === fetchIdRef.current) {
           setData(result);
           setIsLoading(false);
@@ -79,23 +77,11 @@ export function useMapEvents(options: UseMapEventsOptions): UseMapEventsReturn {
           setIsLoading(false);
         }
       });
-  }, [bbox, categories, minSeverity, minConfidence, after]);
+  }, [categories, minSeverity, minConfidence, after]);
 
-  // Debounce on viewport (bbox) changes
+  // Fetch when filters change
   useEffect(() => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    debounceTimerRef.current = setTimeout(() => {
-      doFetch();
-    }, VIEWPORT_DEBOUNCE_MS);
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
+    doFetch();
   }, [doFetch]);
 
   // Cleanup on unmount

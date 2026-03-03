@@ -87,15 +87,17 @@ export async function GET(request: NextRequest) {
     // Clamp bbox to avoid PostGIS antipodal edge error when bbox spans ≥180° longitude.
     // ST_MakeEnvelope with geography type fails when any edge spans ≥ half the globe.
     // Empirically, ±179 works but ±179.1+ triggers the error on Neon/PostGIS.
-    const rawWest = query.bbox?.west ?? -180;
-    const rawSouth = query.bbox?.south ?? -90;
-    const rawEast = query.bbox?.east ?? 180;
-    const rawNorth = query.bbox?.north ?? 90;
-    const viewportQuery = {
-      west: Math.max(rawWest, -179),
-      south: Math.max(rawSouth, -89),
-      east: Math.min(rawEast, 179),
-      north: Math.min(rawNorth, 89),
+    const bboxQuery = query.bbox
+      ? {
+          west: Math.max(query.bbox.west, -179),
+          south: Math.max(query.bbox.south, -89),
+          east: Math.min(query.bbox.east, 179),
+          north: Math.min(query.bbox.north, 89),
+        }
+      : {};
+
+    const baseQuery = {
+      ...bboxQuery,
       categories: query.categories,
       minSeverity: query.minSeverity,
       minConfidence: query.minConfidence,
@@ -105,16 +107,15 @@ export async function GET(request: NextRequest) {
     };
 
     if (query.format === "geojson") {
-      // GeoJSON needs all events in viewport for accurate category counts.
       const geojsonQuery = {
-        ...viewportQuery,
+        ...baseQuery,
         limit: query.limit ?? 5000,
       };
       const geojson = await queryEventsGeoJSON(db, geojsonQuery);
       return NextResponse.json(geojson);
     }
 
-    const events = await queryEventsInViewport(db, viewportQuery);
+    const events = await queryEventsInViewport(db, baseQuery);
     return NextResponse.json({
       data: events,
       meta: {
