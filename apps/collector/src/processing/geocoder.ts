@@ -96,7 +96,7 @@ export class Geocoder {
       const url = `${this.nominatimUrl}/search?q=${encodeURIComponent(location)}&format=json&limit=1`;
       const response = await fetch(url, {
         headers: {
-          "User-Agent": "SitAlert/1.0 (https://github.com/sitalert)",
+          "User-Agent": "TravelRisk/1.0 (https://travelrisk.io)",
         },
       });
 

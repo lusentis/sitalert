@@ -13,7 +13,7 @@ COPY packages/shared/ packages/shared/
 COPY packages/db/ packages/db/
 COPY apps/collector/ apps/collector/
 COPY config/ config/
-RUN pnpm --filter @sitalert/collector build
+RUN pnpm --filter @travelrisk/collector build
 
 FROM base AS runner
 WORKDIR /app

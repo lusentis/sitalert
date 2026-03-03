@@ -9,7 +9,7 @@ import {
   useQueryStates,
 } from "nuqs";
 import { useCallback, useMemo } from "react";
-import { timeRangeToDate, type TimeRange } from "@sitalert/shared";
+import { timeRangeToDate, type TimeRange } from "@travelrisk/shared";
 
 const TIME_RANGE_OPTIONS = ["1h", "6h", "24h", "7d", "30d"] as const;
 

@@ -1,6 +1,6 @@
 import Parser from "rss-parser";
 import { BaseAdapter } from "./base.js";
-import type { Platform, RawEvent } from "@sitalert/shared";
+import type { Platform, RawEvent } from "@travelrisk/shared";
 
 interface FeedConfig {
   name: string;

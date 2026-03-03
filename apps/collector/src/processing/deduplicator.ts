@@ -1,6 +1,6 @@
-import type { PoolClient, EventWithCoords } from "@sitalert/db";
-import { findNearbyEvents } from "@sitalert/db";
-import type { EventCategory } from "@sitalert/shared";
+import type { PoolClient, EventWithCoords } from "@travelrisk/db";
+import { findNearbyEvents } from "@travelrisk/db";
+import type { EventCategory } from "@travelrisk/shared";
 
 /**
  * Compute Jaccard similarity of two strings based on word sets.

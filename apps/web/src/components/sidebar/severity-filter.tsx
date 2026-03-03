@@ -1,6 +1,6 @@
 "use client";
 
-import { SEVERITY_LEVELS } from "@sitalert/shared";
+import { SEVERITY_LEVELS } from "@travelrisk/shared";
 import { Slider } from "@/components/ui/slider";
 
 interface SeverityFilterProps {
@@ -13,11 +13,11 @@ export function SeverityFilter({ value, onChange }: SeverityFilterProps) {
   const label = level?.label ?? `Level ${value}`;
 
   return (
-    <div className="space-y-2">
+    <fieldset className="space-y-2">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <legend className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           Min Severity
-        </h3>
+        </legend>
         <span
           className="text-xs font-medium"
           style={{ color: level?.color }}
@@ -32,7 +32,8 @@ export function SeverityFilter({ value, onChange }: SeverityFilterProps) {
         max={5}
         step={1}
         className="w-full"
+        aria-label="Minimum severity level"
       />
-    </div>
+    </fieldset>
   );
 }

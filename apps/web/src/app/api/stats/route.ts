@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createHttpClient } from "@sitalert/db/client";
-import { getStats24h } from "@sitalert/db/queries";
+import { createHttpClient } from "@travelrisk/db/client";
+import { getStats24h } from "@travelrisk/db/queries";
 
 const CACHE_TTL_SECONDS = 60;
 

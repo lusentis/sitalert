@@ -1,4 +1,4 @@
-import { createPoolClient } from "@sitalert/db";
+import { createPoolClient } from "@travelrisk/db";
 import Redis from "ioredis";
 import WebSocket from "ws";
 import { readFileSync } from "node:fs";
@@ -62,7 +62,7 @@ interface Stoppable {
 }
 
 async function main(): Promise<void> {
-  console.log("[collector] Starting SitAlert Collector...");
+  console.log("[collector] Starting TravelRisk Collector...");
 
   // Load config
   const __dirname = dirname(fileURLToPath(import.meta.url));

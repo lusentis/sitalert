@@ -1,5 +1,5 @@
 {
-  "name": "@sitalert/collector",
+  "name": "@travelrisk/collector",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -17,8 +17,8 @@
   "dependencies": {
     "@ai-sdk/openai": "^1.2.0",
     "@neondatabase/serverless": "^0.10.0",
-    "@sitalert/db": "workspace:*",
-    "@sitalert/shared": "workspace:*",
+    "@travelrisk/db": "workspace:*",
+    "@travelrisk/shared": "workspace:*",
     "ai": "^4.1.0",
     "drizzle-orm": "^0.38.0",
     "ioredis": "^5.4.0",

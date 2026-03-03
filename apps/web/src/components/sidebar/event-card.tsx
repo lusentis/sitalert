@@ -1,27 +1,26 @@
 "use client";
 
-import type { GeoJSONFeature } from "@sitalert/db";
+import type { GeoJSONFeature } from "@travelrisk/db";
 import {
   CATEGORY_METADATA,
+  SEVERITY_LEVELS,
   formatRelativeTime,
-  type EventCategory,
-} from "@sitalert/shared";
+  isEventCategory,
+} from "@travelrisk/shared";
 import { SeverityBadge } from "@/components/common/severity-badge";
 import { NewBadge } from "@/components/common/new-badge";
 import { CATEGORY_ICONS } from "@/lib/category-icons";
 import { NEW_EVENT_THRESHOLD_MINUTES } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import { MapPin } from "lucide-react";
 
 interface EventCardProps {
   feature: GeoJSONFeature;
   onClick: (feature: GeoJSONFeature) => void;
+  isSelected?: boolean;
 }
 
-function isEventCategory(value: string): value is EventCategory {
-  return value in CATEGORY_METADATA;
-}
-
-export function EventCard({ feature, onClick }: EventCardProps) {
+export function EventCard({ feature, onClick, isSelected }: EventCardProps) {
   const { properties } = feature;
   const categoryKey = properties.category;
   const categoryMeta = isEventCategory(categoryKey)
@@ -31,11 +30,18 @@ export function EventCard({ feature, onClick }: EventCardProps) {
     ? CATEGORY_ICONS[categoryKey]
     : null;
   const isNew = properties.ageMinutes < NEW_EVENT_THRESHOLD_MINUTES;
+  const severityColor = SEVERITY_LEVELS[properties.severity]?.color ?? "#9CA3AF";
 
   return (
     <button
       onClick={() => onClick(feature)}
-      className="w-full text-left p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors overflow-hidden"
+      aria-label={properties.title}
+      className={cn(
+        "w-full text-left p-3 rounded-lg border border-border border-l-[3px] hover:bg-accent/50 transition-[color,background-color,border-color,box-shadow] duration-150 overflow-hidden",
+        isSelected && "ring-1 ring-primary/60 bg-accent/30",
+        properties.severity >= 4 && !isSelected && "bg-red-500/[0.03]",
+      )}
+      style={{ borderLeftColor: severityColor }}
     >
       <div className="flex items-start gap-2">
         {CategoryIcon && categoryMeta && (

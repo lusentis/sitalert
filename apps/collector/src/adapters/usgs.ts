@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { BaseAdapter } from "./base.js";
-import type { Platform, RawEvent } from "@sitalert/shared";
+import type { Platform, RawEvent } from "@travelrisk/shared";
 
 const UsgsPropertiesSchema = z.object({
   mag: z.number(),

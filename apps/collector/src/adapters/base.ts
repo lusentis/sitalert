@@ -1,4 +1,4 @@
-import type { Platform, RawEvent, EventCallback } from "@sitalert/shared";
+import type { Platform, RawEvent, EventCallback } from "@travelrisk/shared";
 
 export abstract class BaseAdapter {
   abstract readonly name: string;

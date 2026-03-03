@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { GeoJSONFeatureCollection } from "@sitalert/db";
+import type { GeoJSONFeatureCollection } from "@travelrisk/db";
 import { fetchEventsGeoJSON } from "@/lib/api-client";
 
 export interface BBox {

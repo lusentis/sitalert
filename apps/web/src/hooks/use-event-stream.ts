@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { NormalizedEventSchema, type NormalizedEvent } from "@sitalert/shared";
+import { NormalizedEventSchema, type NormalizedEvent } from "@travelrisk/shared";
 import { SSE_CONFIG } from "@/lib/constants";
 
 interface UseEventStreamReturn {

@@ -1,8 +1,7 @@
 "use client";
 
-import type { GeoJSONFeature } from "@sitalert/db";
-import { CATEGORY_METADATA } from "@sitalert/shared";
-import { formatRelativeTime, type EventCategory } from "@sitalert/shared";
+import type { GeoJSONFeature } from "@travelrisk/db";
+import { CATEGORY_METADATA, formatRelativeTime, isEventCategory } from "@travelrisk/shared";
 import { MapPopup } from "@/components/ui/map";
 import { Badge } from "@/components/ui/badge";
 import { SeverityBadge } from "@/components/common/severity-badge";
@@ -12,10 +11,6 @@ import { CATEGORY_ICONS } from "@/lib/category-icons";
 interface EventPopupProps {
   feature: GeoJSONFeature;
   onClose: () => void;
-}
-
-function isEventCategory(value: string): value is EventCategory {
-  return value in CATEGORY_METADATA;
 }
 
 function formatSourceName(name: string): string {
@@ -46,8 +41,10 @@ export function EventPopup({ feature, onClose }: EventPopupProps) {
             {properties.title}
           </h3>
           <button
+            type="button"
+            aria-label="Close popup"
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground shrink-0"
+            className="-m-1 p-1 rounded text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring transition-colors shrink-0"
           >
             <X className="h-4 w-4" />
           </button>

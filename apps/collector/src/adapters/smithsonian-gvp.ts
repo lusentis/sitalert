@@ -1,6 +1,6 @@
 import Parser from "rss-parser";
 import { BaseAdapter } from "./base.js";
-import type { Platform, RawEvent } from "@sitalert/shared";
+import type { Platform, RawEvent } from "@travelrisk/shared";
 
 type GvpItem = {
   guid: string;
@@ -26,7 +26,7 @@ export class SmithsonianGvpAdapter extends BaseAdapter {
     this.parser = new Parser({
       requestOptions: {
         headers: {
-          "User-Agent": "sitalert/1.0 (https://github.com/sitalert)",
+          "User-Agent": "travelrisk/1.0 (https://travelrisk.io)",
         },
       },
       customFields: {
@@ -38,7 +38,7 @@ export class SmithsonianGvpAdapter extends BaseAdapter {
   protected async poll(): Promise<void> {
     const response = await fetch(SmithsonianGvpAdapter.FEED_URL, {
       headers: {
-        "User-Agent": "sitalert/1.0 (https://github.com/sitalert)",
+        "User-Agent": "travelrisk/1.0 (https://travelrisk.io)",
       },
     });
     if (!response.ok) {

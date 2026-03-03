@@ -9,7 +9,7 @@ import {
   Building2,
   type LucideIcon,
 } from "lucide-react";
-import type { EventCategory } from "@sitalert/shared";
+import type { EventCategory } from "@travelrisk/shared";
 
 export const CATEGORY_ICONS: Record<EventCategory, LucideIcon> = {
   conflict: Swords,

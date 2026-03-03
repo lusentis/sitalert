@@ -1,7 +1,7 @@
 import { generateObject } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
-import { EVENT_CATEGORIES } from "@sitalert/shared";
+import { EVENT_CATEGORIES } from "@travelrisk/shared";
 
 const classificationSchema = z.object({
   relevant: z
@@ -25,7 +25,7 @@ const classificationSchema = z.object({
 
 export type ClassificationResult = z.infer<typeof classificationSchema>;
 
-const SYSTEM_PROMPT = `You are an event classifier for a global situation monitoring system (SitAlert).
+const SYSTEM_PROMPT = `You are an event classifier for a global situation monitoring system (TravelRisk).
 Your job is to analyze raw text from various sources and determine:
 1. Whether it describes a real security, safety, disaster, or crisis event worth tracking
 2. What category it falls into

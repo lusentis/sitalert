@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { GeoJSONFeature } from "@sitalert/db";
+import type { GeoJSONFeature } from "@travelrisk/db";
 import { useFilters } from "@/hooks/use-filters";
-import { useMapEvents, type BBox } from "@/hooks/use-map-events";
+import { useMapEvents } from "@/hooks/use-map-events";
 import { useEventStream } from "@/hooks/use-event-stream";
 import { MapView } from "@/components/map/map-view";
 import { Sidebar } from "@/components/sidebar/sidebar";
@@ -11,7 +11,6 @@ import { TimelineBar } from "@/components/timeline/timeline-bar";
 
 export function MainPage() {
   const filters = useFilters();
-  const [bbox, setBbox] = useState<BBox | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<GeoJSONFeature | null>(
     null,
   );
@@ -43,8 +42,8 @@ export function MainPage() {
     return counts;
   }, [data]);
 
-  const handleBoundsChange = useCallback((newBbox: BBox) => {
-    setBbox(newBbox);
+  const handleBoundsChange = useCallback(() => {
+    // Bounds tracked by MapView internally; kept for MapInitializer trigger
   }, []);
 
   const handleEventSelect = useCallback((feature: GeoJSONFeature) => {
@@ -65,6 +64,7 @@ export function MainPage() {
         isConnected={isConnected}
         counts={categoryCounts}
         onEventClick={handleEventSelect}
+        selectedEventId={selectedEvent?.properties.id ?? null}
       />
       <div className="relative flex-1">
         <MapView

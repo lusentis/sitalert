@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Slider } from "@/components/ui/slider";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 interface ConfidenceFilterProps {
   value: number;
@@ -17,17 +17,18 @@ export function ConfidenceFilter({ value, onChange }: ConfidenceFilterProps) {
     <div className="space-y-2">
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-controls="confidence-panel"
         className="flex items-center gap-1 text-xs font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
       >
-        {isOpen ? (
-          <ChevronDown className="h-3 w-3" />
-        ) : (
-          <ChevronRight className="h-3 w-3" />
-        )}
+        <ChevronRight
+          className="h-3 w-3 transition-transform duration-150"
+          style={{ transform: isOpen ? "rotate(90deg)" : undefined }}
+        />
         Advanced
       </button>
       {isOpen && (
-        <div className="space-y-2 pl-4">
+        <div id="confidence-panel" className="space-y-2 pl-4">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
               Min Confidence
@@ -41,6 +42,7 @@ export function ConfidenceFilter({ value, onChange }: ConfidenceFilterProps) {
             max={100}
             step={5}
             className="w-full"
+            aria-label="Minimum confidence"
           />
         </div>
       )}

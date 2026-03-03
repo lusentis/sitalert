@@ -1,4 +1,4 @@
-import { SEVERITY_LEVELS } from "@sitalert/shared";
+import { SEVERITY_LEVELS } from "@travelrisk/shared";
 import { Badge } from "@/components/ui/badge";
 
 interface SeverityBadgeProps {
@@ -9,7 +9,7 @@ interface SeverityBadgeProps {
 export function SeverityBadge({ severity, className }: SeverityBadgeProps) {
   const level = SEVERITY_LEVELS[severity];
   const label = level?.label ?? `Severity ${severity}`;
-  const color = level?.color ?? "#6B7280";
+  const color = level?.color ?? "#9CA3AF";
 
   return (
     <Badge

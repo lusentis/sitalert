@@ -16,7 +16,7 @@ export const CATEGORY_METADATA: Record<EventCategory, CategoryMetadata> = {
   },
   terrorism: {
     label: "Terrorism",
-    color: "#7C2D12",
+    color: "#B45309",
     icon: "Bomb",
     defaultSeverity: 5,
   },
@@ -52,7 +52,7 @@ export const CATEGORY_METADATA: Record<EventCategory, CategoryMetadata> = {
   },
   infrastructure: {
     label: "Infrastructure",
-    color: "#64748B",
+    color: "#94A3B8",
     icon: "Building2",
     defaultSeverity: 2,
   },

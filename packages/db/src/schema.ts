@@ -10,8 +10,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { geographyPoint } from "./custom-types";
-import type { EventCategory } from "@sitalert/shared";
-import type { EventSource, MediaItem } from "@sitalert/shared";
+import type { EventCategory } from "@travelrisk/shared";
+import type { EventSource, MediaItem } from "@travelrisk/shared";
 
 export const events = pgTable(
   "events",

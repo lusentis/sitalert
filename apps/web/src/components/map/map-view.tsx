@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { Map, useMap, type MapRef, type MapViewport } from "@/components/ui/map";
 import { EventLayer } from "./event-layer";
 import { EventPopup } from "./event-popup";
-import type { GeoJSONFeatureCollection, GeoJSONFeature } from "@sitalert/db";
+import type { GeoJSONFeatureCollection, GeoJSONFeature } from "@travelrisk/db";
 import type { BBox } from "@/hooks/use-map-events";
 import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, VIEWPORT_DEBOUNCE_MS } from "@/lib/constants";
 
@@ -93,7 +93,7 @@ export function MapView({
   }, [selectedEvent]);
 
   return (
-    <div className="relative flex-1 h-full">
+    <div className="relative flex-1 h-full" tabIndex={0} role="application" aria-label="Interactive event map">
       <Map
         ref={mapRef}
         className="h-full w-full"

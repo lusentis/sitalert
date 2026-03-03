@@ -7,7 +7,7 @@ export interface SeverityLevel {
 export const SEVERITY_LEVELS: Record<number, SeverityLevel> = {
   1: {
     label: "Minor",
-    color: "#6B7280",
+    color: "#9CA3AF",
     description: "Limited impact, localized event",
   },
   2: {
@@ -27,7 +27,7 @@ export const SEVERITY_LEVELS: Record<number, SeverityLevel> = {
   },
   5: {
     label: "Catastrophic",
-    color: "#991B1B",
+    color: "#DC2626",
     description: "Extreme impact, mass casualties possible",
   },
 };

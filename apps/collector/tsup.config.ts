@@ -6,5 +6,5 @@ export default defineConfig({
   dts: true,
   // Bundle workspace packages into the output so the runner stage
   // doesn't need to resolve them at runtime
-  noExternal: ["@sitalert/shared", "@sitalert/db"],
+  noExternal: ["@travelrisk/shared", "@travelrisk/db"],
 });

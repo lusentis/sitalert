@@ -8,7 +8,7 @@
 import { TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions/index.js";
 import { NewMessage } from "telegram/events/index.js";
-import type { Platform, RawEvent, EventCallback } from "@sitalert/shared";
+import type { Platform, RawEvent, EventCallback } from "@travelrisk/shared";
 
 export class TelegramAdapter {
   readonly name = "telegram";

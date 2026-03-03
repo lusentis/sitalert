@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { BaseAdapter } from "./base.js";
-import type { Platform, RawEvent } from "@sitalert/shared";
-import { haversineDistance } from "@sitalert/shared";
+import type { Platform, RawEvent } from "@travelrisk/shared";
+import { haversineDistance } from "@travelrisk/shared";
 
 const FirmsRowSchema = z.object({
   latitude: z.coerce.number(),

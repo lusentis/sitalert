@@ -1,5 +1,5 @@
 import type Redis from "ioredis";
-import type { NormalizedEvent } from "@sitalert/shared";
+import type { NormalizedEvent } from "@travelrisk/shared";
 
 export class Publisher {
   private redis: Redis;

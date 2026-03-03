@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@sitalert/shared", "@sitalert/db"],
+  transpilePackages: ["@travelrisk/shared", "@travelrisk/db"],
   webpack: (config) => {
     // Resolve .js imports to .ts files in internal packages
     // (TypeScript ESM convention uses .js extensions in source imports)

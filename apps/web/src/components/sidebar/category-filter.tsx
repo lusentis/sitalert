@@ -1,6 +1,6 @@
 "use client";
 
-import { EVENT_CATEGORIES, CATEGORY_METADATA, type EventCategory } from "@sitalert/shared";
+import { EVENT_CATEGORIES, CATEGORY_METADATA, type EventCategory } from "@travelrisk/shared";
 import { Toggle } from "@/components/ui/toggle";
 import { CATEGORY_ICONS } from "@/lib/category-icons";
 
@@ -20,11 +20,11 @@ export function CategoryFilter({
   const allSelected = selected.length === 0;
 
   return (
-    <div className="space-y-2">
+    <fieldset className="space-y-2">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <legend className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           Categories
-        </h3>
+        </legend>
         {!allSelected && (
           <button
             onClick={onSetAll}
@@ -64,6 +64,6 @@ export function CategoryFilter({
           );
         })}
       </div>
-    </div>
+    </fieldset>
   );
 }

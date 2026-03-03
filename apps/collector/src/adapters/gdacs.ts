@@ -1,6 +1,6 @@
 import Parser from "rss-parser";
 import { BaseAdapter } from "./base.js";
-import type { Platform, RawEvent, EventCategory } from "@sitalert/shared";
+import type { Platform, RawEvent, EventCategory } from "@travelrisk/shared";
 
 type GdacsCustomItem = {
   guid: string;
@@ -73,7 +73,7 @@ export class GdacsAdapter extends BaseAdapter {
     this.parser = new Parser({
       requestOptions: {
         headers: {
-          "User-Agent": "sitalert/1.0 (https://github.com/sitalert)",
+          "User-Agent": "travelrisk/1.0 (https://travelrisk.io)",
         },
       },
       customFields: {

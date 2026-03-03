@@ -26,10 +26,10 @@ importers:
       '@neondatabase/serverless':
         specifier: ^0.10.0
         version: 0.10.4
-      '@sitalert/db':
+      '@travelrisk/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@sitalert/shared':
+      '@travelrisk/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       ai:
@@ -75,10 +75,10 @@ importers:
       '@neondatabase/serverless':
         specifier: ^0.10.0
         version: 0.10.4
-      '@sitalert/db':
+      '@travelrisk/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@sitalert/shared':
+      '@travelrisk/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@upstash/redis':
@@ -157,7 +157,7 @@ importers:
       '@neondatabase/serverless':
         specifier: ^0.10.0
         version: 0.10.4
-      '@sitalert/shared':
+      '@travelrisk/shared':
         specifier: workspace:*
         version: link:../shared
       drizzle-orm:

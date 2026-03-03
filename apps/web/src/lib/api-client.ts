@@ -1,5 +1,5 @@
-import type { GeoJSONFeatureCollection } from "@sitalert/db";
-import type { EventStats } from "@sitalert/db";
+import type { GeoJSONFeatureCollection } from "@travelrisk/db";
+import type { EventStats } from "@travelrisk/db";
 
 export interface FetchEventsParams {
   bbox?: { west: number; south: number; east: number; north: number };

@@ -1,13 +1,13 @@
 import type Redis from "ioredis";
-import type { PoolClient } from "@sitalert/db";
-import { insertEvent, upsertEvent } from "@sitalert/db";
+import type { PoolClient } from "@travelrisk/db";
+import { insertEvent, upsertEvent } from "@travelrisk/db";
 import type {
   RawEvent,
   NormalizedEvent,
   EventSource,
   EventCategory,
   MediaItem,
-} from "@sitalert/shared";
+} from "@travelrisk/shared";
 import { Classifier } from "./processing/classifier.js";
 import { Geocoder } from "./processing/geocoder.js";
 import { Deduplicator } from "./processing/deduplicator.js";

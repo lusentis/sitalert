@@ -2,13 +2,28 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { useMap } from "@/components/ui/map";
-import type { GeoJSONFeatureCollection, GeoJSONFeature } from "@sitalert/db";
+import type { GeoJSONFeatureCollection, GeoJSONFeature } from "@travelrisk/db";
+import { CATEGORY_COLORS } from "@travelrisk/shared";
 
 const SOURCE_ID = "events-source";
 const CLUSTER_LAYER = "events-clusters";
 const CLUSTER_COUNT_LAYER = "events-cluster-count";
 const UNCLUSTERED_LAYER = "events-unclustered-point";
 const PULSE_LAYER = "events-pulse";
+
+const CLUSTER_THRESHOLD_MEDIUM = 20;
+const CLUSTER_THRESHOLD_LARGE = 100;
+const CLUSTER_COLOR_SMALL = "#3B82F6";
+const CLUSTER_COLOR_MEDIUM = "#F59E0B";
+const CLUSTER_COLOR_LARGE = "#EF4444";
+const CLUSTER_TEXT_COLOR = "#ffffff";
+
+const SEVERITY_RADIUS_MIN = 6;
+const SEVERITY_RADIUS_MAX = 14;
+
+const PULSE_AGE_MINUTES = 30;
+const PULSE_BASE_RADIUS = 14;
+const PULSE_AMPLITUDE = 10;
 
 interface EventLayerProps {
   data: GeoJSONFeatureCollection | null;
@@ -20,17 +35,32 @@ const EMPTY_COLLECTION: GeoJSONFeatureCollection = {
   features: [],
 };
 
+function buildCategoryColorExpression(): maplibregl.ExpressionSpecification {
+  const entries = Object.entries(CATEGORY_COLORS);
+  const matchExpr: unknown[] = ["match", ["get", "category"]];
+  for (const [category, color] of entries) {
+    matchExpr.push(category, color);
+  }
+  matchExpr.push("#9CA3AF"); // fallback
+  return matchExpr as maplibregl.ExpressionSpecification;
+}
+
+const categoryColorExpr = buildCategoryColorExpression();
+
 export function EventLayer({ data, onEventClick }: EventLayerProps) {
   const { map, isLoaded } = useMap();
   const animationRef = useRef<number | null>(null);
   const layersAddedRef = useRef(false);
   const onEventClickRef = useRef(onEventClick);
+  const lastDataRef = useRef<{ length: number; firstTimestamp: string | null }>({
+    length: 0,
+    firstTimestamp: null,
+  });
   onEventClickRef.current = onEventClick;
 
   const setupLayers = useCallback(() => {
     if (!map || layersAddedRef.current) return;
 
-    // Add GeoJSON source with clustering
     map.addSource(SOURCE_ID, {
       type: "geojson",
       data: data ?? EMPTY_COLLECTION,
@@ -39,7 +69,6 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
       clusterMaxZoom: 14,
     });
 
-    // Cluster circle layer
     map.addLayer({
       id: CLUSTER_LAYER,
       type: "circle",
@@ -49,19 +78,19 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
         "circle-color": [
           "step",
           ["get", "point_count"],
-          "#51bbd6",
-          20,
-          "#f1f075",
-          100,
-          "#f28cb1",
+          CLUSTER_COLOR_SMALL,
+          CLUSTER_THRESHOLD_MEDIUM,
+          CLUSTER_COLOR_MEDIUM,
+          CLUSTER_THRESHOLD_LARGE,
+          CLUSTER_COLOR_LARGE,
         ],
         "circle-radius": [
           "step",
           ["get", "point_count"],
           15,
+          CLUSTER_THRESHOLD_MEDIUM,
           20,
-          20,
-          100,
+          CLUSTER_THRESHOLD_LARGE,
           25,
         ],
         "circle-stroke-width": 2,
@@ -70,7 +99,6 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
       },
     });
 
-    // Cluster count text layer
     map.addLayer({
       id: CLUSTER_COUNT_LAYER,
       type: "symbol",
@@ -81,46 +109,25 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
         "text-size": 12,
       },
       paint: {
-        "text-color": "#1a1a1a",
+        "text-color": CLUSTER_TEXT_COLOR,
       },
     });
 
-    // Unclustered point layer
     map.addLayer({
       id: UNCLUSTERED_LAYER,
       type: "circle",
       source: SOURCE_ID,
       filter: ["!", ["has", "point_count"]],
       paint: {
-        "circle-color": [
-          "match",
-          ["get", "category"],
-          "conflict",
-          "#DC2626",
-          "terrorism",
-          "#7C2D12",
-          "natural_disaster",
-          "#EA580C",
-          "weather_extreme",
-          "#2563EB",
-          "health_epidemic",
-          "#16A34A",
-          "civil_unrest",
-          "#CA8A04",
-          "transport",
-          "#9333EA",
-          "infrastructure",
-          "#64748B",
-          "#6B7280",
-        ],
+        "circle-color": categoryColorExpr,
         "circle-radius": [
           "interpolate",
           ["linear"],
           ["get", "severity"],
           1,
-          6,
+          SEVERITY_RADIUS_MIN,
           5,
-          14,
+          SEVERITY_RADIUS_MAX,
         ],
         "circle-opacity": [
           "interpolate",
@@ -136,7 +143,6 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
       },
     });
 
-    // Pulse layer for events < 30 minutes old
     map.addLayer({
       id: PULSE_LAYER,
       type: "circle",
@@ -144,31 +150,11 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
       filter: [
         "all",
         ["!", ["has", "point_count"]],
-        ["<", ["get", "ageMinutes"], 30],
+        ["<", ["get", "ageMinutes"], PULSE_AGE_MINUTES],
       ],
       paint: {
-        "circle-color": [
-          "match",
-          ["get", "category"],
-          "conflict",
-          "#DC2626",
-          "terrorism",
-          "#7C2D12",
-          "natural_disaster",
-          "#EA580C",
-          "weather_extreme",
-          "#2563EB",
-          "health_epidemic",
-          "#16A34A",
-          "civil_unrest",
-          "#CA8A04",
-          "transport",
-          "#9333EA",
-          "infrastructure",
-          "#64748B",
-          "#6B7280",
-        ],
-        "circle-radius": 20,
+        "circle-color": categoryColorExpr,
+        "circle-radius": PULSE_BASE_RADIUS,
         "circle-opacity": 0,
         "circle-stroke-width": 0,
       },
@@ -177,13 +163,11 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
     layersAddedRef.current = true;
   }, [map, data]);
 
-  // Set up layers once the map style is loaded
   useEffect(() => {
     if (!map || !isLoaded) return;
 
     setupLayers();
 
-    // Cluster click handler — zoom to expand
     const handleClusterClick = (
       e: maplibregl.MapMouseEvent & { features?: maplibregl.MapGeoJSONFeature[] },
     ) => {
@@ -209,7 +193,6 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
       }
     };
 
-    // Point click handler
     const handlePointClick = (
       e: maplibregl.MapMouseEvent & { features?: maplibregl.MapGeoJSONFeature[] },
     ) => {
@@ -219,7 +202,6 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
       const geometry = feature.geometry;
 
       if (geometry.type === "Point" && onEventClickRef.current) {
-        // MapLibre flattens nested objects to JSON strings
         let sources: Array<{ name: string; platform: string; url?: string }> = [];
         try {
           const raw = feature.properties?.["sources"];
@@ -253,35 +235,41 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
       }
     };
 
-    // Cursor changes
-    const handleMouseEnterCluster = () => {
+    const handleMouseEnter = () => {
       map.getCanvas().style.cursor = "pointer";
     };
-    const handleMouseLeaveCluster = () => {
-      map.getCanvas().style.cursor = "";
-    };
-    const handleMouseEnterPoint = () => {
-      map.getCanvas().style.cursor = "pointer";
-    };
-    const handleMouseLeavePoint = () => {
+    const handleMouseLeave = () => {
       map.getCanvas().style.cursor = "";
     };
 
     map.on("click", CLUSTER_LAYER, handleClusterClick);
     map.on("click", UNCLUSTERED_LAYER, handlePointClick);
     map.on("click", PULSE_LAYER, handlePointClick);
-    map.on("mouseenter", CLUSTER_LAYER, handleMouseEnterCluster);
-    map.on("mouseleave", CLUSTER_LAYER, handleMouseLeaveCluster);
-    map.on("mouseenter", UNCLUSTERED_LAYER, handleMouseEnterPoint);
-    map.on("mouseleave", UNCLUSTERED_LAYER, handleMouseLeavePoint);
-    map.on("mouseenter", PULSE_LAYER, handleMouseEnterPoint);
-    map.on("mouseleave", PULSE_LAYER, handleMouseLeavePoint);
+    map.on("mouseenter", CLUSTER_LAYER, handleMouseEnter);
+    map.on("mouseleave", CLUSTER_LAYER, handleMouseLeave);
+    map.on("mouseenter", UNCLUSTERED_LAYER, handleMouseEnter);
+    map.on("mouseleave", UNCLUSTERED_LAYER, handleMouseLeave);
+    map.on("mouseenter", PULSE_LAYER, handleMouseEnter);
+    map.on("mouseleave", PULSE_LAYER, handleMouseLeave);
 
-    // Pulse animation
+    // Pulse animation — respects prefers-reduced-motion and tab visibility
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let pulsePhase = 0;
+    let paused = prefersReducedMotion.matches;
+
+    if (prefersReducedMotion.matches && map.getLayer(PULSE_LAYER)) {
+      map.setPaintProperty(PULSE_LAYER, "circle-radius", PULSE_BASE_RADIUS);
+      map.setPaintProperty(PULSE_LAYER, "circle-opacity", 0.15);
+    }
+
     const animatePulse = () => {
+      if (paused) {
+        animationRef.current = requestAnimationFrame(animatePulse);
+        return;
+      }
+
       pulsePhase = (pulsePhase + 0.02) % 1;
-      const radius = 14 + Math.sin(pulsePhase * Math.PI * 2) * 10;
+      const radius = PULSE_BASE_RADIUS + Math.sin(pulsePhase * Math.PI * 2) * PULSE_AMPLITUDE;
       const opacity = 0.3 - Math.sin(pulsePhase * Math.PI * 2) * 0.2;
 
       if (map.getLayer(PULSE_LAYER)) {
@@ -290,22 +278,51 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
       }
       animationRef.current = requestAnimationFrame(animatePulse);
     };
-    animationRef.current = requestAnimationFrame(animatePulse);
+
+    if (!prefersReducedMotion.matches) {
+      animationRef.current = requestAnimationFrame(animatePulse);
+    }
+
+    const handleVisibilityChange = () => {
+      paused = document.hidden || prefersReducedMotion.matches;
+    };
+
+    const handleMotionChange = () => {
+      paused = prefersReducedMotion.matches || document.hidden;
+      if (prefersReducedMotion.matches) {
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+          animationRef.current = null;
+        }
+        if (map.getLayer(PULSE_LAYER)) {
+          map.setPaintProperty(PULSE_LAYER, "circle-radius", PULSE_BASE_RADIUS);
+          map.setPaintProperty(PULSE_LAYER, "circle-opacity", 0.15);
+        }
+      } else if (!animationRef.current) {
+        animationRef.current = requestAnimationFrame(animatePulse);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    prefersReducedMotion.addEventListener("change", handleMotionChange);
 
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
 
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      prefersReducedMotion.removeEventListener("change", handleMotionChange);
+
       map.off("click", CLUSTER_LAYER, handleClusterClick);
       map.off("click", UNCLUSTERED_LAYER, handlePointClick);
       map.off("click", PULSE_LAYER, handlePointClick);
-      map.off("mouseenter", CLUSTER_LAYER, handleMouseEnterCluster);
-      map.off("mouseleave", CLUSTER_LAYER, handleMouseLeaveCluster);
-      map.off("mouseenter", UNCLUSTERED_LAYER, handleMouseEnterPoint);
-      map.off("mouseleave", UNCLUSTERED_LAYER, handleMouseLeavePoint);
-      map.off("mouseenter", PULSE_LAYER, handleMouseEnterPoint);
-      map.off("mouseleave", PULSE_LAYER, handleMouseLeavePoint);
+      map.off("mouseenter", CLUSTER_LAYER, handleMouseEnter);
+      map.off("mouseleave", CLUSTER_LAYER, handleMouseLeave);
+      map.off("mouseenter", UNCLUSTERED_LAYER, handleMouseEnter);
+      map.off("mouseleave", UNCLUSTERED_LAYER, handleMouseLeave);
+      map.off("mouseenter", PULSE_LAYER, handleMouseEnter);
+      map.off("mouseleave", PULSE_LAYER, handleMouseLeave);
 
       if (layersAddedRef.current) {
         if (map.getLayer(PULSE_LAYER)) map.removeLayer(PULSE_LAYER);
@@ -318,15 +335,25 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
     };
   }, [map, isLoaded, setupLayers]);
 
-  // Update GeoJSON data when it changes
+  // Update GeoJSON data when it changes (with equality check)
   useEffect(() => {
     if (!map || !isLoaded || !layersAddedRef.current) return;
 
+    const incoming = data ?? EMPTY_COLLECTION;
+    const firstTimestamp = incoming.features[0]?.properties?.timestamp ?? null;
+
+    if (
+      incoming.features.length === lastDataRef.current.length &&
+      firstTimestamp === lastDataRef.current.firstTimestamp
+    ) {
+      return;
+    }
+
+    lastDataRef.current = { length: incoming.features.length, firstTimestamp };
+
     const source = map.getSource(SOURCE_ID);
     if (source && "setData" in source) {
-      (source as maplibregl.GeoJSONSource).setData(
-        data ?? EMPTY_COLLECTION,
-      );
+      (source as maplibregl.GeoJSONSource).setData(incoming);
     }
   }, [map, isLoaded, data]);
 

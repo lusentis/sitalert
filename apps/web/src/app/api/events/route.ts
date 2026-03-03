@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHttpClient } from "@sitalert/db/client";
+import { createHttpClient } from "@travelrisk/db/client";
 import {
   queryEventsInViewport,
   queryEventsGeoJSON,
-} from "@sitalert/db/queries";
-import { EventsQuerySchema, EventCategory } from "@sitalert/shared";
+} from "@travelrisk/db/queries";
+import { EventsQuerySchema, EventCategory } from "@travelrisk/shared";
 import { z } from "zod";
 
 function parseBBox(

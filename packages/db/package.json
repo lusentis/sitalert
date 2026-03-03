@@ -1,5 +1,5 @@
 {
-  "name": "@sitalert/db",
+  "name": "@travelrisk/db",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.0",
-    "@sitalert/shared": "workspace:*",
+    "@travelrisk/shared": "workspace:*",
     "drizzle-orm": "^0.38.0",
     "zod": "^3.24.0"
   },

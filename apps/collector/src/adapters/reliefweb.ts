@@ -1,6 +1,6 @@
 import Parser from "rss-parser";
 import { BaseAdapter } from "./base.js";
-import type { Platform, RawEvent, EventCategory } from "@sitalert/shared";
+import type { Platform, RawEvent, EventCategory } from "@travelrisk/shared";
 
 type ReliefWebItem = {
   guid: string;
@@ -40,7 +40,7 @@ export class ReliefWebAdapter extends BaseAdapter {
     this.parser = new Parser({
       requestOptions: {
         headers: {
-          "User-Agent": "sitalert/1.0 (https://github.com/sitalert)",
+          "User-Agent": "travelrisk/1.0 (https://travelrisk.io)",
         },
       },
     });
@@ -49,7 +49,7 @@ export class ReliefWebAdapter extends BaseAdapter {
   protected async poll(): Promise<void> {
     // Fetch manually to control headers and avoid rss-parser's HTTP client issues
     const response = await fetch(ReliefWebAdapter.FEED_URL, {
-      headers: { "User-Agent": "sitalert/1.0 (https://github.com/sitalert)" },
+      headers: { "User-Agent": "travelrisk/1.0 (https://travelrisk.io)" },
     });
     if (!response.ok) {
       throw new Error(`ReliefWeb RSS returned ${response.status}`);

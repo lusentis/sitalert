@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { BaseAdapter } from "./base.js";
-import type { Platform, RawEvent } from "@sitalert/shared";
+import type { Platform, RawEvent } from "@travelrisk/shared";
 
 const WhoOutbreakSchema = z.object({
   Id: z.coerce.string(),
@@ -37,7 +37,7 @@ export class WhoOutbreaksAdapter extends BaseAdapter {
     const response = await fetch(WhoOutbreaksAdapter.FEED_URL, {
       headers: {
         Accept: "application/json",
-        "User-Agent": "sitalert/1.0",
+        "User-Agent": "travelrisk/1.0",
       },
     });
     if (!response.ok) {

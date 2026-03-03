@@ -1,7 +1,7 @@
 "use client";
 
-import type { GeoJSONFeatureCollection, GeoJSONFeature } from "@sitalert/db";
-import type { NormalizedEvent } from "@sitalert/shared";
+import type { GeoJSONFeatureCollection, GeoJSONFeature } from "@travelrisk/db";
+import type { NormalizedEvent } from "@travelrisk/shared";
 import type { Filters } from "@/hooks/use-filters";
 import { CategoryFilter } from "./category-filter";
 import { SeverityFilter } from "./severity-filter";
@@ -9,7 +9,6 @@ import { ConfidenceFilter } from "./confidence-filter";
 import { EventFeed } from "./event-feed";
 import { Separator } from "@/components/ui/separator";
 import { Drawer } from "vaul";
-import { useEffect, useState } from "react";
 import { Activity } from "lucide-react";
 
 interface SidebarContentProps {
@@ -17,8 +16,10 @@ interface SidebarContentProps {
   data: GeoJSONFeatureCollection | null;
   lastStreamEvent: NormalizedEvent | null;
   isLoading: boolean;
+  isConnected: boolean;
   counts?: Record<string, number>;
   onEventClick: (feature: GeoJSONFeature) => void;
+  selectedEventId?: string | null;
 }
 
 function SidebarContent({
@@ -26,14 +27,23 @@ function SidebarContent({
   data,
   lastStreamEvent,
   isLoading,
+  isConnected,
   counts,
   onEventClick,
+  selectedEventId,
 }: SidebarContentProps) {
   return (
     <div className="flex flex-col h-full p-4 space-y-4 min-w-0">
       <div className="flex items-center gap-2">
         <Activity className="h-5 w-5 text-primary" />
-        <h1 className="text-lg font-bold">SitAlert</h1>
+        <h1 className="text-lg font-bold font-mono tracking-tight">TravelRisk</h1>
+        {isConnected && (
+          <div className="flex items-center gap-1.5 ml-auto">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 motion-safe:animate-pulse" />
+            <span className="text-[10px] font-medium text-emerald-400/80 uppercase tracking-wider">Live</span>
+            <span className="sr-only">Live connection active</span>
+          </div>
+        )}
       </div>
       <Separator />
       <CategoryFilter
@@ -56,61 +66,53 @@ function SidebarContent({
         lastStreamEvent={lastStreamEvent}
         onEventClick={onEventClick}
         isLoading={isLoading}
+        selectedEventId={selectedEventId}
       />
     </div>
   );
 }
 
-interface SidebarProps extends SidebarContentProps {
-  isConnected: boolean;
-}
-
-export function Sidebar(props: SidebarProps) {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  if (isMobile) {
-    return (
-      <Drawer.Root>
-        <Drawer.Trigger asChild>
-          <button className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-card text-card-foreground border border-border rounded-full px-4 py-2 shadow-lg flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            <span className="text-sm font-medium">Events</span>
-            {props.isConnected && (
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            )}
-          </button>
-        </Drawer.Trigger>
-        <Drawer.Portal>
-          <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40" />
-          <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-2xl max-h-[85vh] outline-none">
-            <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted my-3" />
-            <div className="overflow-y-auto max-h-[calc(85vh-40px)]">
-              <SidebarContent {...props} />
-            </div>
-          </Drawer.Content>
-        </Drawer.Portal>
-      </Drawer.Root>
-    );
-  }
-
+export function Sidebar(props: SidebarContentProps) {
   return (
-    <aside className="w-[380px] shrink-0 h-screen bg-card border-r border-border overflow-y-auto overflow-x-hidden">
-      <SidebarContent {...props} />
-      {props.isConnected && (
-        <div className="px-4 pb-3">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            Live
-          </div>
-        </div>
-      )}
-    </aside>
+    <>
+      {/* Desktop sidebar */}
+      <aside
+        role="complementary"
+        aria-label="Event sidebar"
+        className="hidden md:flex w-80 lg:w-96 shrink-0 h-screen flex-col bg-card border-r border-border overflow-y-auto overflow-x-hidden"
+      >
+        <SidebarContent {...props} />
+      </aside>
+
+      {/* Mobile drawer */}
+      <div className="md:hidden">
+        <Drawer.Root>
+          <Drawer.Trigger asChild>
+            <button
+              aria-label="Open event panel"
+              className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-card text-card-foreground border border-border rounded-full px-4 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-lg flex items-center gap-2"
+            >
+              <Activity className="h-4 w-4" />
+              <span className="text-sm font-medium">Events</span>
+              {props.isConnected && (
+                <>
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 motion-safe:animate-pulse" />
+                  <span className="sr-only">Live</span>
+                </>
+              )}
+            </button>
+          </Drawer.Trigger>
+          <Drawer.Portal>
+            <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40" />
+            <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-2xl max-h-[85dvh] outline-none flex flex-col">
+              <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted my-3" />
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                <SidebarContent {...props} />
+              </div>
+            </Drawer.Content>
+          </Drawer.Portal>
+        </Drawer.Root>
+      </div>
+    </>
   );
 }
