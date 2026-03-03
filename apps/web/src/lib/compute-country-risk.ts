@@ -17,13 +17,13 @@ export function computeCountryRisk(
   return scores;
 }
 
-/** Risk thresholds and colors (oklch for perceptual uniformity) */
+/** Risk thresholds and colors (hex for MapLibre GL compatibility) */
 const RISK_SCALE = [
   { max: 0, color: "transparent" },
-  { max: 5, color: "oklch(0.85 0.12 85)" }, // Low — faint amber
-  { max: 15, color: "oklch(0.75 0.15 60)" }, // Moderate — orange
-  { max: 30, color: "oklch(0.60 0.18 30)" }, // High — red-orange
-  { max: Infinity, color: "oklch(0.45 0.20 25)" }, // Critical — deep red
+  { max: 5, color: "#E2B553" },   // Low — faint amber
+  { max: 15, color: "#D48A2E" },  // Moderate — orange
+  { max: 30, color: "#B74E1A" },  // High — red-orange
+  { max: Infinity, color: "#8B2D15" }, // Critical — deep red
 ] as const;
 
 /** Map a numeric risk score to a fill color string. */

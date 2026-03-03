@@ -20,6 +20,10 @@ interface ChoroplethLayerProps {
 function buildFillColorExpression(
   scores: Map<string, number>,
 ): maplibregl.ExpressionSpecification {
+  // match requires at least one label+output pair; fall back to literal if empty
+  if (scores.size === 0) {
+    return "transparent" as unknown as maplibregl.ExpressionSpecification;
+  }
   const matchExpr: unknown[] = ["match", ["get", ISO_PROPERTY]];
   for (const [code, score] of scores) {
     matchExpr.push(code, riskColor(score));
