@@ -106,7 +106,7 @@ Single system prompt for the judgment call. Receives new event + candidates + si
 - **Situation**: "Does this event belong to an ongoing situation? Group by: same conflict/crisis, same natural disaster sequence, same disease outbreak. Do NOT group unrelated events just because they're nearby."
 - **New situation threshold**: "Create a new situation only for significant events likely to have follow-ups. A single minor incident doesn't need a situation."
 
-Cost estimate: ~$0.002/event (gpt-4o-mini, ~500 input tokens + 100 output tokens).
+Uses the same Groq/Llama 3.1 8B Instant model as the classifier (`@ai-sdk/groq` + `generateObject`). Cost: free at current volume (Groq free tier). Falls within existing rate limits since it's one call per event, same as classification.
 
 ---
 
@@ -141,12 +141,17 @@ When `duplicateOf` is set:
 
 ---
 
+## Tech Stack
+
+- **LLM**: Groq Llama 3.1 8B Instant (via `@ai-sdk/groq` + Vercel AI SDK `generateObject`)
+- **Same model as classifier** — no new dependencies. The judgment call uses the same `createGroq()` instance.
+- **Cost**: Free tier at current volume (~1000 events/day). Groq free tier allows 30 req/min, 14400 req/day.
+
 ## Cost Impact
 
 | Current | After |
 |---------|-------|
-| 1 LLM call per OSINT event (classification only) | 1 classification + 1 judgment per OSINT event |
+| 1 Groq call per OSINT event (classification) | 1 classification + 1 judgment per OSINT event |
 | 0 LLM calls per structured event | 1 judgment per structured event |
-| ~$0.001/OSINT event | ~$0.003/OSINT event, ~$0.002/structured event |
 
-At 1000 events/day: ~$2-3/day additional cost.
+All calls use Groq free tier. At 1000 events/day we'd use ~2000 calls/day (well within 14400 limit). The judgment call is lightweight (~500 input tokens, ~100 output).
