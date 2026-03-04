@@ -1,5 +1,5 @@
 import type Redis from "ioredis";
-import type { PoolClient, EventWithCoords } from "@travelrisk/db";
+import type { PoolClient, Event } from "@travelrisk/db";
 import {
   insertEvent,
   upsertEvent,
@@ -71,14 +71,6 @@ export class Pipeline {
     const severity = raw.severity ?? 2;
     const confidence = raw.confidence ?? 1.0;
 
-    // Deduplication check
-    const { isDuplicate, existingEvent } = await this.deduplicator.findDuplicate(
-      location.lat,
-      location.lng,
-      category,
-      title,
-    );
-
     const source: EventSource = {
       platform: raw.platform,
       name: raw.sourceAdapter,
@@ -92,52 +84,24 @@ export class Pipeline {
       caption: m.caption,
     }));
 
-    if (isDuplicate && existingEvent) {
-      // Merge with existing event
-      const merged = this.deduplicator.merge(existingEvent, severity, [source]);
+    const { event, lat, lng } = await this.judgeAndAct({
+      title,
+      summary: raw.summary ?? raw.rawText.slice(0, 500),
+      category,
+      severity,
+      confidence,
+      lat: location.lat,
+      lng: location.lng,
+      locationName: raw.locationName ?? "Unknown",
+      countryCode: raw.countryCode ?? null,
+      timestamp: new Date(raw.timestamp),
+      sources: [source],
+      media,
+      rawText: raw.rawText,
+    });
 
-      const event = await upsertEvent(this.db, {
-        existingId: merged.existingId,
-        title: existingEvent.title,
-        summary: existingEvent.summary ?? raw.summary ?? "",
-        category,
-        severity: merged.severity,
-        confidence: Math.max(existingEvent.confidence, confidence),
-        location: "", // Overridden by PostGIS SQL in upsertEvent
-        lat: existingEvent.lat,
-        lng: existingEvent.lng,
-        locationName: existingEvent.locationName,
-        countryCode: existingEvent.countryCode ?? raw.countryCode ?? null,
-        timestamp: existingEvent.timestamp,
-        sources: merged.sources as EventSource[],
-        media: [...(existingEvent.media as MediaItem[]), ...media],
-        rawText: existingEvent.rawText,
-      });
-
-      console.log(`[pipeline] Merged event: ${event.id} "${title}"`);
-      await this.publishNormalized(event, existingEvent.lat, existingEvent.lng);
-    } else {
-      // Insert new event
-      const event = await insertEvent(this.db, {
-        title,
-        summary: raw.summary ?? raw.rawText.slice(0, 500),
-        category,
-        severity,
-        confidence,
-        location: "", // Overridden by PostGIS SQL in insertEvent
-        lat: location.lat,
-        lng: location.lng,
-        locationName: raw.locationName ?? "Unknown",
-        countryCode: raw.countryCode ?? null,
-        timestamp: new Date(raw.timestamp),
-        sources: [source],
-        media,
-        rawText: raw.rawText,
-      });
-
-      console.log(`[pipeline] New event: ${event.id} "${title}"`);
-      await this.publishNormalized(event, location.lat, location.lng);
-    }
+    console.log(`[pipeline] Processed structured event: ${event.id} "${title}"`);
+    await this.publishNormalized(event, lat, lng);
   }
 
   private async processOsint(raw: RawEvent): Promise<void> {
@@ -186,14 +150,7 @@ export class Pipeline {
       return;
     }
 
-    // Step 3: Dedup
-    const { isDuplicate, existingEvent } = await this.deduplicator.findDuplicate(
-      location.lat,
-      location.lng,
-      category,
-      title,
-    );
-
+    // Step 3: Judge (dedup + situation assignment via LLM)
     const source: EventSource = {
       platform: raw.platform,
       name: raw.sourceAdapter,
@@ -207,54 +164,134 @@ export class Pipeline {
       caption: m.caption,
     }));
 
-    if (isDuplicate && existingEvent) {
-      const merged = this.deduplicator.merge(existingEvent, severity, [source]);
+    const { event, lat, lng } = await this.judgeAndAct({
+      title,
+      summary,
+      category,
+      severity,
+      confidence,
+      lat: location.lat,
+      lng: location.lng,
+      locationName: locationName ?? "Unknown",
+      countryCode: countryCode ?? null,
+      timestamp: new Date(raw.timestamp),
+      sources: [source],
+      media,
+      rawText: raw.rawText,
+    });
 
-      const event = await upsertEvent(this.db, {
-        existingId: merged.existingId,
-        title: existingEvent.title,
-        summary: existingEvent.summary ?? summary,
-        category,
-        severity: merged.severity,
-        confidence: Math.max(existingEvent.confidence, confidence),
-        location: "", // Overridden by PostGIS SQL in upsertEvent
-        lat: existingEvent.lat,
-        lng: existingEvent.lng,
-        locationName: existingEvent.locationName,
-        countryCode: existingEvent.countryCode ?? countryCode ?? null,
-        timestamp: existingEvent.timestamp,
-        sources: merged.sources as EventSource[],
-        media: [...(existingEvent.media as MediaItem[]), ...media],
-        rawText: existingEvent.rawText,
-      });
+    console.log(`[pipeline] Processed OSINT event: ${event.id} "${title}"`);
+    await this.publishNormalized(event, lat, lng);
+  }
 
-      console.log(`[pipeline] Merged OSINT event: ${event.id} "${title}"`);
-      await this.publishNormalized(event, existingEvent.lat, existingEvent.lng);
-    } else {
-      const event = await insertEvent(this.db, {
-        title,
-        summary,
+  private async judgeAndAct(params: {
+    title: string;
+    summary: string;
+    category: EventCategory;
+    severity: number;
+    confidence: number;
+    lat: number;
+    lng: number;
+    locationName: string;
+    countryCode: string | null;
+    timestamp: Date;
+    sources: EventSource[];
+    media: MediaItem[];
+    rawText: string;
+  }): Promise<{ event: Event; lat: number; lng: number }> {
+    const { title, summary, category, severity, confidence, lat, lng, locationName, countryCode, timestamp, sources, media, rawText } = params;
+
+    // Fetch candidates for dedup and situation assignment
+    const [candidates, activeSituations] = await Promise.all([
+      findNearbyEvents(this.db, lat, lng, category, 50, 6),
+      findActiveSituations(this.db, lat, lng, category, 500),
+    ]);
+
+    const judgment = await this.judgment.call(
+      { title, summary, category, locationName, timestamp: timestamp.toISOString() },
+      candidates,
+      activeSituations,
+    );
+
+    // Handle duplicate
+    if (judgment.duplicateOf) {
+      const existing = candidates.find((c) => c.id === judgment.duplicateOf);
+      if (existing) {
+        const merged = this.deduplicator.merge(existing, severity, sources);
+        const event = await upsertEvent(this.db, {
+          existingId: merged.existingId,
+          title: existing.title,
+          summary: existing.summary ?? summary,
+          category,
+          severity: merged.severity,
+          confidence: Math.max(existing.confidence, confidence),
+          location: "", // Overridden by PostGIS SQL
+          lat: existing.lat,
+          lng: existing.lng,
+          locationName: existing.locationName,
+          countryCode: existing.countryCode ?? countryCode,
+          timestamp: existing.timestamp,
+          sources: merged.sources as EventSource[],
+          media: [...(existing.media as MediaItem[]), ...media],
+          rawText: existing.rawText,
+          situationId: existing.situationId,
+        });
+        console.log(`[pipeline] Duplicate merged into ${existing.id}`);
+        return { event, lat: existing.lat, lng: existing.lng };
+      }
+      // LLM hallucinated an ID — fall through to standalone insert
+      console.warn(`[pipeline] Judgment returned unknown duplicateOf="${judgment.duplicateOf}", inserting as new`);
+    }
+
+    // Handle existing situation assignment
+    if (judgment.situationId) {
+      const matchedSituation = activeSituations.find((s) => s.id === judgment.situationId);
+      if (matchedSituation) {
+        const event = await insertEvent(this.db, {
+          title, summary, category, severity, confidence,
+          location: "", lat, lng, locationName,
+          countryCode, timestamp, sources, media, rawText,
+          situationId: matchedSituation.id,
+        });
+        await updateSituation(this.db, matchedSituation.id, { severity });
+        console.log(`[pipeline] Assigned to situation ${matchedSituation.id}`);
+        return { event, lat, lng };
+      }
+      console.warn(`[pipeline] Judgment returned unknown situationId="${judgment.situationId}", inserting as new`);
+    }
+
+    // Handle new situation creation
+    if (judgment.newSituation) {
+      const situation = await createSituation(this.db, {
+        title: judgment.newSituation.title,
+        summary: judgment.newSituation.summary,
         category,
         severity,
-        confidence,
-        location: "", // Overridden by PostGIS SQL in insertEvent
-        lat: location.lat,
-        lng: location.lng,
-        locationName: locationName ?? "Unknown",
-        countryCode: countryCode ?? null,
-        timestamp: new Date(raw.timestamp),
-        sources: [source],
-        media,
-        rawText: raw.rawText,
+        countryCode,
+        lat,
+        lng,
       });
-
-      console.log(`[pipeline] New OSINT event: ${event.id} "${title}"`);
-      await this.publishNormalized(event, location.lat, location.lng);
+      const event = await insertEvent(this.db, {
+        title, summary, category, severity, confidence,
+        location: "", lat, lng, locationName,
+        countryCode, timestamp, sources, media, rawText,
+        situationId: situation.id,
+      });
+      console.log(`[pipeline] Created new situation ${situation.id}`);
+      return { event, lat, lng };
     }
+
+    // Standalone event — no dedup, no situation
+    const event = await insertEvent(this.db, {
+      title, summary, category, severity, confidence,
+      location: "", lat, lng, locationName,
+      countryCode, timestamp, sources, media, rawText,
+    });
+    return { event, lat, lng };
   }
 
   private async publishNormalized(
-    event: { id: string; title: string; summary: string; category: string; severity: number; confidence: number; locationName: string; countryCode: string | null; timestamp: Date; sources: unknown; media: unknown; rawText: string | null; situationId: string | null; expiresAt: Date | null; createdAt: Date; updatedAt: Date },
+    event: Event,
     lat: number,
     lng: number,
   ): Promise<void> {
