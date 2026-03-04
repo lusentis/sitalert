@@ -2,21 +2,16 @@
 
 import {
   parseAsArrayOf,
-  parseAsFloat,
   parseAsInteger,
   parseAsString,
-  parseAsStringLiteral,
   useQueryStates,
 } from "nuqs";
 import { useCallback, useMemo } from "react";
-import { timeRangeToDate, type TimeRange } from "@travelrisk/shared";
-
-const TIME_RANGE_OPTIONS = ["1h", "6h", "24h", "7d", "30d"] as const;
+import { timeRangeToDate } from "@travelrisk/shared";
 
 const filtersParsers = {
   categories: parseAsArrayOf(parseAsString).withDefault([]),
   minSeverity: parseAsInteger.withDefault(2),
-  timeRange: parseAsStringLiteral(TIME_RANGE_OPTIONS).withDefault("24h"),
 };
 
 const filtersOptions = {
@@ -54,16 +49,9 @@ export function useFilters() {
     [setFilters],
   );
 
-  const setTimeRange = useCallback(
-    (value: TimeRange) => {
-      setFilters((prev) => ({ ...prev, timeRange: value }));
-    },
-    [setFilters],
-  );
-
   const after = useMemo(
-    () => timeRangeToDate(filters.timeRange).toISOString(),
-    [filters.timeRange],
+    () => timeRangeToDate("24h").toISOString(),
+    [],
   );
 
   return {
@@ -72,7 +60,6 @@ export function useFilters() {
     toggleCategory,
     setCategories,
     setMinSeverity,
-    setTimeRange,
   };
 }
 

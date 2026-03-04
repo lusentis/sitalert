@@ -16,7 +16,7 @@ export const RawEventSchema = z.object({
     })
     .optional(),
   locationName: z.string().optional(),
-  countryCode: z.string().length(2).optional(),
+  countryCodes: z.array(z.string().length(2)).optional(),
   category: EventCategory.optional(),
   severity: z.number().int().min(1).max(5).optional(),
   confidence: z.number().min(0).max(1).optional(),

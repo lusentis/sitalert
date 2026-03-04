@@ -13,7 +13,6 @@ import { AdvisoryPopup } from "@/components/map/advisory-popup";
 import { buildAdvisoryScores } from "@/lib/compute-country-risk";
 import { fetchAdvisories, type AdvisoryData } from "@/lib/api-client";
 import { Sidebar } from "@/components/sidebar/sidebar";
-import { TimelineBar } from "@/components/timeline/timeline-bar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export function MainPage() {
@@ -62,7 +61,7 @@ export function MainPage() {
     }
   }, [lastEvent, refetch, refetchSituations]);
 
-  const [choroplethVisible, setChoroplethVisible] = useState(false);
+  const [choroplethVisible, setChoroplethVisible] = useState(true);
 
   const countryScores = useMemo(
     () => buildAdvisoryScores(advisories),
@@ -80,6 +79,7 @@ export function MainPage() {
       );
       if (advisory) {
         setSelectedAdvisory({ advisory, lngLat });
+        setSelectedEvent(null); // dismiss event popup when advisory is selected
       }
     },
     [advisories],
@@ -101,6 +101,7 @@ export function MainPage() {
 
   const handleEventSelect = useCallback((feature: GeoJSONFeature) => {
     setSelectedEvent(feature);
+    setSelectedAdvisory(null); // dismiss advisory popup when an event is selected
   }, []);
 
   const handleDeselectEvent = useCallback(() => {
@@ -136,10 +137,6 @@ export function MainPage() {
                 />
               ) : null
             }
-          />
-          <TimelineBar
-            value={filters.timeRange}
-            onChange={filters.setTimeRange}
           />
           <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-2">
             <MapLegend choroplethActive={choroplethVisible} />

@@ -6,17 +6,8 @@ import type { GeoJSONFeatureCollection, GeoJSONFeature } from "@travelrisk/db";
 import { CATEGORY_COLORS } from "@travelrisk/shared";
 
 const SOURCE_ID = "events-source";
-const CLUSTER_LAYER = "events-clusters";
-const CLUSTER_COUNT_LAYER = "events-cluster-count";
-const UNCLUSTERED_LAYER = "events-unclustered-point";
+const POINT_LAYER = "events-point";
 const PULSE_LAYER = "events-pulse";
-
-const CLUSTER_THRESHOLD_MEDIUM = 20;
-const CLUSTER_THRESHOLD_LARGE = 100;
-const CLUSTER_COLOR_SMALL = "#3B82F6";
-const CLUSTER_COLOR_MEDIUM = "#F59E0B";
-const CLUSTER_COLOR_LARGE = "#EF4444";
-const CLUSTER_TEXT_COLOR = "#ffffff";
 
 const SEVERITY_RADIUS_MIN = 6;
 const SEVERITY_RADIUS_MAX = 14;
@@ -27,7 +18,7 @@ const PULSE_AMPLITUDE = 10;
 
 interface EventLayerProps {
   data: GeoJSONFeatureCollection | null;
-  onEventClick?: (feature: GeoJSONFeature) => void;
+  onEventClick?: (features: GeoJSONFeature[]) => void;
 }
 
 const EMPTY_COLLECTION: GeoJSONFeatureCollection = {
@@ -47,6 +38,47 @@ function buildCategoryColorExpression(): maplibregl.ExpressionSpecification {
 
 const categoryColorExpr = buildCategoryColorExpression();
 
+function parseGeoFeature(feature: maplibregl.MapGeoJSONFeature): GeoJSONFeature | null {
+  const geometry = feature.geometry;
+  if (geometry.type !== "Point") return null;
+
+  let sources: Array<{ name: string; platform: string; url?: string }> = [];
+  try {
+    const raw = feature.properties?.["sources"];
+    sources = typeof raw === "string" ? JSON.parse(raw) : Array.isArray(raw) ? raw : [];
+  } catch {
+    // ignore parse errors
+  }
+
+  return {
+    type: "Feature",
+    geometry: {
+      type: "Point",
+      coordinates: geometry.coordinates as [number, number],
+    },
+    properties: {
+      id: feature.properties?.["id"] as string,
+      title: feature.properties?.["title"] as string,
+      summary: feature.properties?.["summary"] as string,
+      category: feature.properties?.["category"] as string,
+      severity: Number(feature.properties?.["severity"]),
+      confidence: Number(feature.properties?.["confidence"]),
+      locationName: feature.properties?.["locationName"] as string,
+      countryCodes: (() => {
+        const raw = feature.properties?.["countryCodes"];
+        if (typeof raw === "string") {
+          try { return JSON.parse(raw) as string[]; } catch { return null; }
+        }
+        return Array.isArray(raw) ? raw as string[] : null;
+      })(),
+      timestamp: feature.properties?.["timestamp"] as string,
+      ageMinutes: Number(feature.properties?.["ageMinutes"]),
+      sourceCount: Number(feature.properties?.["sourceCount"]),
+      sources,
+    },
+  };
+}
+
 export function EventLayer({ data, onEventClick }: EventLayerProps) {
   const { map, isLoaded } = useMap();
   const animationRef = useRef<number | null>(null);
@@ -64,60 +96,12 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
     map.addSource(SOURCE_ID, {
       type: "geojson",
       data: data ?? EMPTY_COLLECTION,
-      cluster: true,
-      clusterRadius: 50,
-      clusterMaxZoom: 14,
     });
 
     map.addLayer({
-      id: CLUSTER_LAYER,
+      id: POINT_LAYER,
       type: "circle",
       source: SOURCE_ID,
-      filter: ["has", "point_count"],
-      paint: {
-        "circle-color": [
-          "step",
-          ["get", "point_count"],
-          CLUSTER_COLOR_SMALL,
-          CLUSTER_THRESHOLD_MEDIUM,
-          CLUSTER_COLOR_MEDIUM,
-          CLUSTER_THRESHOLD_LARGE,
-          CLUSTER_COLOR_LARGE,
-        ],
-        "circle-radius": [
-          "step",
-          ["get", "point_count"],
-          15,
-          CLUSTER_THRESHOLD_MEDIUM,
-          20,
-          CLUSTER_THRESHOLD_LARGE,
-          25,
-        ],
-        "circle-stroke-width": 2,
-        "circle-stroke-color": "#ffffff",
-        "circle-opacity": 0.85,
-      },
-    });
-
-    map.addLayer({
-      id: CLUSTER_COUNT_LAYER,
-      type: "symbol",
-      source: SOURCE_ID,
-      filter: ["has", "point_count"],
-      layout: {
-        "text-field": ["get", "point_count_abbreviated"],
-        "text-size": 12,
-      },
-      paint: {
-        "text-color": CLUSTER_TEXT_COLOR,
-      },
-    });
-
-    map.addLayer({
-      id: UNCLUSTERED_LAYER,
-      type: "circle",
-      source: SOURCE_ID,
-      filter: ["!", ["has", "point_count"]],
       paint: {
         "circle-color": categoryColorExpr,
         "circle-radius": [
@@ -147,11 +131,7 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
       id: PULSE_LAYER,
       type: "circle",
       source: SOURCE_ID,
-      filter: [
-        "all",
-        ["!", ["has", "point_count"]],
-        ["<", ["get", "ageMinutes"], PULSE_AGE_MINUTES],
-      ],
+      filter: ["<", ["get", "ageMinutes"], PULSE_AGE_MINUTES],
       paint: {
         "circle-color": categoryColorExpr,
         "circle-radius": PULSE_BASE_RADIUS,
@@ -168,70 +148,33 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
 
     setupLayers();
 
-    const handleClusterClick = (
-      e: maplibregl.MapMouseEvent & { features?: maplibregl.MapGeoJSONFeature[] },
-    ) => {
-      const features = e.features;
-      if (!features || features.length === 0) return;
-      const feature = features[0];
-      const clusterId = feature.properties?.["cluster_id"] as number | undefined;
-      if (clusterId === undefined) return;
-
-      const source = map.getSource(SOURCE_ID);
-      if (source && "getClusterExpansionZoom" in source) {
-        (
-          source as maplibregl.GeoJSONSource
-        ).getClusterExpansionZoom(clusterId).then((zoom) => {
-          const geometry = feature.geometry;
-          if (geometry.type === "Point") {
-            map.easeTo({
-              center: geometry.coordinates as [number, number],
-              zoom: zoom,
-            });
-          }
-        });
-      }
-    };
-
     const handlePointClick = (
       e: maplibregl.MapMouseEvent & { features?: maplibregl.MapGeoJSONFeature[] },
     ) => {
-      const features = e.features;
-      if (!features || features.length === 0) return;
-      const feature = features[0];
-      const geometry = feature.geometry;
+      if (!onEventClickRef.current) return;
+      const clickedFeatures = e.features;
+      if (!clickedFeatures || clickedFeatures.length === 0) return;
 
-      if (geometry.type === "Point" && onEventClickRef.current) {
-        let sources: Array<{ name: string; platform: string; url?: string }> = [];
-        try {
-          const raw = feature.properties?.["sources"];
-          sources = typeof raw === "string" ? JSON.parse(raw) : Array.isArray(raw) ? raw : [];
-        } catch {
-          // ignore parse errors
+      // Prevent the click from also triggering the choropleth fill layer
+      e.originalEvent.stopPropagation();
+
+      // Query all features at this point (handles overlapping pins)
+      const allFeatures = map.queryRenderedFeatures(e.point, {
+        layers: [POINT_LAYER],
+      });
+
+      const parsed: GeoJSONFeature[] = [];
+      const seen = new Set<string>();
+      for (const f of allFeatures) {
+        const geo = parseGeoFeature(f);
+        if (geo && !seen.has(geo.properties.id)) {
+          seen.add(geo.properties.id);
+          parsed.push(geo);
         }
+      }
 
-        const geoFeature: GeoJSONFeature = {
-          type: "Feature",
-          geometry: {
-            type: "Point",
-            coordinates: geometry.coordinates as [number, number],
-          },
-          properties: {
-            id: feature.properties?.["id"] as string,
-            title: feature.properties?.["title"] as string,
-            summary: feature.properties?.["summary"] as string,
-            category: feature.properties?.["category"] as string,
-            severity: Number(feature.properties?.["severity"]),
-            confidence: Number(feature.properties?.["confidence"]),
-            locationName: feature.properties?.["locationName"] as string,
-            countryCode: (feature.properties?.["countryCode"] as string | null) ?? null,
-            timestamp: feature.properties?.["timestamp"] as string,
-            ageMinutes: Number(feature.properties?.["ageMinutes"]),
-            sourceCount: Number(feature.properties?.["sourceCount"]),
-            sources,
-          },
-        };
-        onEventClickRef.current(geoFeature);
+      if (parsed.length > 0) {
+        onEventClickRef.current(parsed);
       }
     };
 
@@ -242,13 +185,10 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
       map.getCanvas().style.cursor = "";
     };
 
-    map.on("click", CLUSTER_LAYER, handleClusterClick);
-    map.on("click", UNCLUSTERED_LAYER, handlePointClick);
+    map.on("click", POINT_LAYER, handlePointClick);
     map.on("click", PULSE_LAYER, handlePointClick);
-    map.on("mouseenter", CLUSTER_LAYER, handleMouseEnter);
-    map.on("mouseleave", CLUSTER_LAYER, handleMouseLeave);
-    map.on("mouseenter", UNCLUSTERED_LAYER, handleMouseEnter);
-    map.on("mouseleave", UNCLUSTERED_LAYER, handleMouseLeave);
+    map.on("mouseenter", POINT_LAYER, handleMouseEnter);
+    map.on("mouseleave", POINT_LAYER, handleMouseLeave);
     map.on("mouseenter", PULSE_LAYER, handleMouseEnter);
     map.on("mouseleave", PULSE_LAYER, handleMouseLeave);
 
@@ -314,21 +254,16 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       prefersReducedMotion.removeEventListener("change", handleMotionChange);
 
-      map.off("click", CLUSTER_LAYER, handleClusterClick);
-      map.off("click", UNCLUSTERED_LAYER, handlePointClick);
+      map.off("click", POINT_LAYER, handlePointClick);
       map.off("click", PULSE_LAYER, handlePointClick);
-      map.off("mouseenter", CLUSTER_LAYER, handleMouseEnter);
-      map.off("mouseleave", CLUSTER_LAYER, handleMouseLeave);
-      map.off("mouseenter", UNCLUSTERED_LAYER, handleMouseEnter);
-      map.off("mouseleave", UNCLUSTERED_LAYER, handleMouseLeave);
+      map.off("mouseenter", POINT_LAYER, handleMouseEnter);
+      map.off("mouseleave", POINT_LAYER, handleMouseLeave);
       map.off("mouseenter", PULSE_LAYER, handleMouseEnter);
       map.off("mouseleave", PULSE_LAYER, handleMouseLeave);
 
       if (layersAddedRef.current) {
         if (map.getLayer(PULSE_LAYER)) map.removeLayer(PULSE_LAYER);
-        if (map.getLayer(UNCLUSTERED_LAYER)) map.removeLayer(UNCLUSTERED_LAYER);
-        if (map.getLayer(CLUSTER_COUNT_LAYER)) map.removeLayer(CLUSTER_COUNT_LAYER);
-        if (map.getLayer(CLUSTER_LAYER)) map.removeLayer(CLUSTER_LAYER);
+        if (map.getLayer(POINT_LAYER)) map.removeLayer(POINT_LAYER);
         if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
         layersAddedRef.current = false;
       }

@@ -1,41 +1,52 @@
+import crypto from "node:crypto";
 import Parser from "rss-parser";
+import type Redis from "ioredis";
 import { BaseAdapter } from "./base";
 import type { Platform, RawEvent } from "@travelrisk/shared";
+import { SeenSet } from "../processing/seen-set";
 
 interface FeedConfig {
   name: string;
   url: string;
 }
 
+const TTL_7D = 7 * 24 * 60 * 60;
+
 export class RssAdapter extends BaseAdapter {
   readonly name = "rss";
   readonly platform: Platform = "rss";
 
   private feeds: FeedConfig[];
-  private seenGuids = new Map<string, Set<string>>();
+  private feedSeenSets = new Map<string, SeenSet>();
   private parser: Parser;
 
-  constructor(feeds: FeedConfig[], pollingInterval = 300_000) {
-    super({ defaultConfidence: 0.6, pollingInterval });
+  constructor(feeds: FeedConfig[], pollingInterval = 300_000, redis?: Redis) {
+    super({ defaultConfidence: 0.6, pollingInterval, redis });
     this.feeds = feeds;
     this.parser = new Parser();
   }
 
   protected override async init(): Promise<void> {
-    // Initialize seen GUID sets per feed
+    if (!this.redis) {
+      throw new Error(`[${this.name}] Redis required for SeenSet`);
+    }
     for (const feed of this.feeds) {
-      this.seenGuids.set(feed.url, new Set());
+      const urlHash = crypto.createHash("md5").update(feed.url).digest("hex").slice(0, 12);
+      const seenSet = new SeenSet(this.redis, `rss:${urlHash}`, TTL_7D);
+      this.feedSeenSets.set(feed.url, seenSet);
     }
   }
 
   protected async poll(): Promise<void> {
-    for (const feedConfig of this.feeds) {
-      try {
-        await this.pollFeed(feedConfig);
-      } catch (err: unknown) {
+    const results = await Promise.allSettled(
+      this.feeds.map((feedConfig) => this.pollFeed(feedConfig)),
+    );
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
+      if (result.status === "rejected") {
         console.error(
-          `[rss] Error polling feed ${feedConfig.name}:`,
-          err instanceof Error ? err.message : err,
+          `[rss] Error polling feed ${this.feeds[i].name}:`,
+          result.reason instanceof Error ? result.reason.message : result.reason,
         );
       }
     }
@@ -43,13 +54,13 @@ export class RssAdapter extends BaseAdapter {
 
   private async pollFeed(feedConfig: FeedConfig): Promise<void> {
     const feed = await this.parser.parseURL(feedConfig.url);
-    const seenSet = this.seenGuids.get(feedConfig.url);
-    if (!seenSet) return;
+    const seen = this.feedSeenSets.get(feedConfig.url);
+    if (!seen) return;
 
     for (const item of feed.items) {
       const guid = item.guid ?? item.link ?? item.title ?? "";
-      if (!guid || seenSet.has(guid)) continue;
-      seenSet.add(guid);
+      if (!guid || (await seen.has(guid))) continue;
+      await seen.add(guid);
 
       const raw: RawEvent = {
         sourceAdapter: this.name,
@@ -71,15 +82,6 @@ export class RssAdapter extends BaseAdapter {
       };
 
       this.emit(raw);
-    }
-
-    // Prune per-feed seen sets
-    if (seenSet.size > 5_000) {
-      const arr = Array.from(seenSet);
-      seenSet.clear();
-      for (const id of arr.slice(arr.length - 2_500)) {
-        seenSet.add(id);
-      }
     }
   }
 }

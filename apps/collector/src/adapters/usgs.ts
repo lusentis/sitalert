@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type Redis from "ioredis";
 import { BaseAdapter } from "./base";
 import type { Platform, RawEvent } from "@travelrisk/shared";
 
@@ -35,17 +36,17 @@ export function magnitudeToSeverity(mag: number): number {
   return 1;
 }
 
+const TTL_2H = 2 * 60 * 60;
+
 export class UsgsAdapter extends BaseAdapter {
   readonly name = "usgs";
   readonly platform: Platform = "api";
 
-  private seenIds = new Set<string>();
-
   private static readonly FEED_URL =
     "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson";
 
-  constructor(pollingInterval = 60_000) {
-    super({ defaultConfidence: 1.0, pollingInterval });
+  constructor(pollingInterval = 60_000, redis?: Redis) {
+    super({ defaultConfidence: 1.0, pollingInterval, redis });
   }
 
   protected async poll(): Promise<void> {
@@ -57,10 +58,13 @@ export class UsgsAdapter extends BaseAdapter {
     const json: unknown = await response.json();
     const data = UsgsResponseSchema.parse(json);
 
+    const seen = this.getSeenSet(TTL_2H);
+    let emitted = 0;
+
     for (const feature of data.features) {
-      if (this.seenIds.has(feature.id)) continue;
+      if (await seen.has(feature.id)) continue;
       if (feature.properties.mag < 5) continue;
-      this.seenIds.add(feature.id);
+      await seen.add(feature.id);
 
       const [lng, lat] = feature.geometry.coordinates;
       const severity = magnitudeToSeverity(feature.properties.mag);
@@ -88,12 +92,12 @@ export class UsgsAdapter extends BaseAdapter {
       };
 
       this.emit(raw);
+      emitted++;
     }
 
-    // Prune old IDs to avoid unbounded growth
-    if (this.seenIds.size > 10_000) {
-      const idsArray = Array.from(this.seenIds);
-      this.seenIds = new Set(idsArray.slice(idsArray.length - 5_000));
+    if (emitted > 0) {
+      const total = await seen.size();
+      console.log(`[${this.name}] Emitted ${emitted} new events (${total} in seen set)`);
     }
   }
 }

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type Redis from "ioredis";
 import { BaseAdapter } from "./base";
 import type { Platform, RawEvent } from "@travelrisk/shared";
 
@@ -20,17 +21,17 @@ function extractCountry(title: string): string | undefined {
   return match?.[1]?.trim();
 }
 
+const TTL_7D = 7 * 24 * 60 * 60;
+
 export class WhoOutbreaksAdapter extends BaseAdapter {
   readonly name = "who-outbreaks";
   readonly platform: Platform = "api";
 
-  private seenIds = new Set<string>();
-
   private static readonly FEED_URL =
     "https://www.who.int/api/news/diseaseoutbreaknews?$top=20&$orderby=PublicationDate desc&$select=Id,Title,PublicationDate,UrlName,Overview";
 
-  constructor(pollingInterval = 21_600_000) {
-    super({ defaultConfidence: 0.9, pollingInterval });
+  constructor(pollingInterval = 21_600_000, redis?: Redis) {
+    super({ defaultConfidence: 0.9, pollingInterval, redis });
   }
 
   protected async poll(): Promise<void> {
@@ -47,9 +48,11 @@ export class WhoOutbreaksAdapter extends BaseAdapter {
     const json: unknown = await response.json();
     const data = WhoResponseSchema.parse(json);
 
+    const seen = this.getSeenSet(TTL_7D);
+
     for (const outbreak of data.value) {
-      if (this.seenIds.has(outbreak.Id)) continue;
-      this.seenIds.add(outbreak.Id);
+      if (await seen.has(outbreak.Id)) continue;
+      await seen.add(outbreak.Id);
 
       const country = extractCountry(outbreak.Title);
       const overview = outbreak.Overview ?? "";
@@ -75,12 +78,6 @@ export class WhoOutbreaksAdapter extends BaseAdapter {
       };
 
       this.emit(raw);
-    }
-
-    // Prune old IDs
-    if (this.seenIds.size > 10_000) {
-      const idsArray = Array.from(this.seenIds);
-      this.seenIds = new Set(idsArray.slice(idsArray.length - 5_000));
     }
   }
 }

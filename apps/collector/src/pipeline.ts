@@ -25,6 +25,10 @@ function isStructuredEvent(raw: RawEvent): boolean {
   return !!(raw.location && raw.category && raw.title);
 }
 
+function elapsed(start: number): string {
+  return `${(performance.now() - start).toFixed(0)}ms`;
+}
+
 export class Pipeline {
   private db: PoolClient;
   private classifier: Classifier;
@@ -64,6 +68,9 @@ export class Pipeline {
   }
 
   private async processStructured(raw: RawEvent): Promise<void> {
+    const t0 = performance.now();
+    const tag = `[perf:${raw.sourceAdapter}]`;
+
     // Structured events already have location, category, title
     const location = raw.location!;
     const category = raw.category as EventCategory;
@@ -84,6 +91,21 @@ export class Pipeline {
       caption: m.caption,
     }));
 
+    // Reverse-geocode if no locationName provided
+    let locationName = raw.locationName;
+    let countryCodes = raw.countryCodes ?? [];
+    if (!locationName) {
+      const tGeo = performance.now();
+      const geocoded = await this.geocoder.reverse(location.lat, location.lng);
+      console.log(`${tag} reverse-geocode=${elapsed(tGeo)}`);
+      if (geocoded) {
+        locationName = geocoded.displayName;
+        if (countryCodes.length === 0 && geocoded.countryCode) {
+          countryCodes = [geocoded.countryCode];
+        }
+      }
+    }
+
     const { event, lat, lng } = await this.judgeAndAct({
       title,
       summary: raw.summary ?? raw.rawText.slice(0, 500),
@@ -92,21 +114,26 @@ export class Pipeline {
       confidence,
       lat: location.lat,
       lng: location.lng,
-      locationName: raw.locationName ?? "Unknown",
-      countryCode: raw.countryCode ?? null,
+      locationName: locationName ?? "Unknown",
+      countryCodes,
       timestamp: new Date(raw.timestamp),
       sources: [source],
       media,
       rawText: raw.rawText,
     });
 
-    console.log(`[pipeline] Processed structured event: ${event.id} "${title}"`);
+    console.log(`${tag} total=${elapsed(t0)} | "${title}"`);
     await this.publishNormalized(event, lat, lng);
   }
 
   private async processOsint(raw: RawEvent): Promise<void> {
+    const t0 = performance.now();
+    const tag = `[perf:${raw.sourceAdapter}]`;
+
     // Step 1: Classify with LLM
+    const tClassify = performance.now();
     const classification = await this.classifier.classify(raw.rawText);
+    console.log(`${tag} classify=${elapsed(tClassify)}`);
     if (!classification) {
       console.log(
         `[pipeline] Discarding irrelevant OSINT event from ${raw.sourceAdapter}`,
@@ -123,24 +150,33 @@ export class Pipeline {
     // Step 2: Geocode if no coordinates
     let location = raw.location;
     let locationName = raw.locationName;
-    let countryCode = raw.countryCode;
+    let countryCodes = raw.countryCodes ?? [];
 
     if (!location) {
+      const tGeo = performance.now();
       // Try location mentions from classifier, then raw locationName
       const locationCandidates = [
         ...classification.locationMentions,
         ...(locationName ? [locationName] : []),
       ];
 
+      const collectedCodes = new Set<string>(countryCodes);
+      let geocodeAttempts = 0;
       for (const candidate of locationCandidates) {
+        geocodeAttempts++;
         const geocoded = await this.geocoder.geocode(candidate);
         if (geocoded) {
-          location = { lat: geocoded.lat, lng: geocoded.lng };
-          locationName = locationName ?? geocoded.displayName;
-          countryCode = countryCode ?? geocoded.countryCode;
-          break;
+          if (!location) {
+            location = { lat: geocoded.lat, lng: geocoded.lng };
+            locationName = locationName ?? geocoded.displayName;
+          }
+          if (geocoded.countryCode) {
+            collectedCodes.add(geocoded.countryCode);
+          }
         }
       }
+      countryCodes = [...collectedCodes];
+      console.log(`${tag} geocode=${elapsed(tGeo)} attempts=${geocodeAttempts}/${locationCandidates.length}`);
     }
 
     if (!location) {
@@ -173,14 +209,14 @@ export class Pipeline {
       lat: location.lat,
       lng: location.lng,
       locationName: locationName ?? "Unknown",
-      countryCode: countryCode ?? null,
+      countryCodes,
       timestamp: new Date(raw.timestamp),
       sources: [source],
       media,
       rawText: raw.rawText,
     });
 
-    console.log(`[pipeline] Processed OSINT event: ${event.id} "${title}"`);
+    console.log(`${tag} total=${elapsed(t0)} | "${title}"`);
     await this.publishNormalized(event, lat, lng);
   }
 
@@ -193,25 +229,30 @@ export class Pipeline {
     lat: number;
     lng: number;
     locationName: string;
-    countryCode: string | null;
+    countryCodes: string[];
     timestamp: Date;
     sources: EventSource[];
     media: MediaItem[];
     rawText: string;
   }): Promise<{ event: Event; lat: number; lng: number }> {
-    const { title, summary, category, severity, confidence, lat, lng, locationName, countryCode, timestamp, sources, media, rawText } = params;
+    const { title, summary, category, severity, confidence, lat, lng, locationName, countryCodes, timestamp, sources, media, rawText } = params;
+    const tag = `[perf:judge]`;
 
     // Fetch candidates for dedup and situation assignment
+    const tDb = performance.now();
     const [candidates, activeSituations] = await Promise.all([
-      findNearbyEvents(this.db, lat, lng, category, 50, 6),
+      findNearbyEvents(this.db, lat, lng, category, 200, 24),
       findActiveSituations(this.db, lat, lng, category, 500),
     ]);
+    console.log(`${tag} db-query=${elapsed(tDb)} candidates=${candidates.length} situations=${activeSituations.length}`);
 
+    const tLlm = performance.now();
     const judgment = await this.judgment.call(
       { title, summary, category, locationName, timestamp: timestamp.toISOString() },
       candidates,
       activeSituations,
     );
+    console.log(`${tag} llm=${elapsed(tLlm)} decision=${judgment.duplicateOf ? "duplicate" : judgment.situationId ? "existing" : judgment.newSituation ? "new" : "fallback"}`);
 
     // Handle duplicate
     if (judgment.duplicateOf) {
@@ -229,7 +270,7 @@ export class Pipeline {
           lat: existing.lat,
           lng: existing.lng,
           locationName: existing.locationName,
-          countryCode: existing.countryCode ?? countryCode,
+          countryCodes: existing.countryCodes ?? countryCodes,
           timestamp: existing.timestamp,
           sources: merged.sources as EventSource[],
           media: [...(existing.media as MediaItem[]), ...media],
@@ -246,13 +287,15 @@ export class Pipeline {
     if (judgment.situationId) {
       const matchedSituation = activeSituations.find((s) => s.id === judgment.situationId);
       if (matchedSituation) {
-        const event = await insertEvent(this.db, {
-          title, summary, category, severity, confidence,
-          location: "", lat, lng, locationName,
-          countryCode, timestamp, sources, media, rawText,
-          situationId: matchedSituation.id,
-        });
-        await updateSituation(this.db, matchedSituation.id, { severity });
+        const [event] = await Promise.all([
+          insertEvent(this.db, {
+            title, summary, category, severity, confidence,
+            location: "", lat, lng, locationName,
+            countryCodes, timestamp, sources, media, rawText,
+            situationId: matchedSituation.id,
+          }),
+          updateSituation(this.db, matchedSituation.id, { severity }),
+        ]);
         console.log(`[pipeline] Assigned to situation ${matchedSituation.id}`);
         return { event, lat, lng };
       }
@@ -266,14 +309,14 @@ export class Pipeline {
         summary: judgment.newSituation.summary,
         category,
         severity,
-        countryCode,
+        countryCodes,
         lat,
         lng,
       });
       const event = await insertEvent(this.db, {
         title, summary, category, severity, confidence,
         location: "", lat, lng, locationName,
-        countryCode, timestamp, sources, media, rawText,
+        countryCodes, timestamp, sources, media, rawText,
         situationId: situation.id,
       });
       console.log(`[pipeline] Created new situation ${situation.id}`);
@@ -286,14 +329,14 @@ export class Pipeline {
       summary,
       category,
       severity,
-      countryCode,
+      countryCodes,
       lat,
       lng,
     });
     const event = await insertEvent(this.db, {
       title, summary, category, severity, confidence,
       location: "", lat, lng, locationName,
-      countryCode, timestamp, sources, media, rawText,
+      countryCodes, timestamp, sources, media, rawText,
       situationId: fallbackSituation.id,
     });
     console.log(`[pipeline] Auto-created situation ${fallbackSituation.id} for event ${event.id}`);
@@ -314,7 +357,7 @@ export class Pipeline {
       confidence: event.confidence,
       location: { lat, lng },
       locationName: event.locationName,
-      countryCode: event.countryCode ?? undefined,
+      countryCodes: event.countryCodes ?? undefined,
       timestamp: event.timestamp.toISOString(),
       sources: (event.sources as EventSource[]) ?? [],
       media: (event.media as MediaItem[]) ?? [],

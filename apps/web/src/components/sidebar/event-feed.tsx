@@ -52,7 +52,7 @@ export function EventFeed({
             severity: lastStreamEvent.severity,
             confidence: lastStreamEvent.confidence,
             locationName: lastStreamEvent.locationName,
-            countryCode: lastStreamEvent.countryCode ?? null,
+            countryCodes: lastStreamEvent.countryCodes ?? null,
             timestamp: lastStreamEvent.timestamp,
             ageMinutes: ageInMinutes(lastStreamEvent.timestamp),
             sourceCount: lastStreamEvent.sources.length,

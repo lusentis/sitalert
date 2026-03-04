@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type Redis from "ioredis";
 import { BaseAdapter } from "./base";
 import type { Platform, RawEvent } from "@travelrisk/shared";
 
@@ -35,17 +36,17 @@ const ALERT_LEVEL_SEVERITY: Record<string, number> = {
   WARNING: 5,
 };
 
+const TTL_7D = 7 * 24 * 60 * 60;
+
 export class UsgsVolcanoesAdapter extends BaseAdapter {
   readonly name = "usgs-volcanoes";
   readonly platform: Platform = "api";
 
-  private seenVnums = new Set<string>();
-
   private static readonly FEED_URL =
     "https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes";
 
-  constructor(pollingInterval = 3_600_000) {
-    super({ defaultConfidence: 1.0, pollingInterval });
+  constructor(pollingInterval = 3_600_000, redis?: Redis) {
+    super({ defaultConfidence: 1.0, pollingInterval, redis });
   }
 
   protected async poll(): Promise<void> {
@@ -57,14 +58,11 @@ export class UsgsVolcanoesAdapter extends BaseAdapter {
     const json: unknown = await response.json();
     const volcanoes = ElevatedVolcanoesResponseSchema.parse(json);
 
-    // Clear seen set each poll since we want to emit updated state
-    const currentVnums = new Set<string>();
+    const seen = this.getSeenSet(TTL_7D);
 
     for (const volcano of volcanoes) {
-      currentVnums.add(volcano.vnum);
-
-      // Skip if we already emitted this volcano this cycle
-      if (this.seenVnums.has(volcano.vnum)) continue;
+      if (await seen.has(volcano.vnum)) continue;
+      await seen.add(volcano.vnum);
 
       const severity =
         ALERT_LEVEL_SEVERITY[volcano.alert_level.toUpperCase()] ?? 2;
@@ -124,7 +122,5 @@ export class UsgsVolcanoesAdapter extends BaseAdapter {
 
       this.emit(raw);
     }
-
-    this.seenVnums = currentVnums;
   }
 }

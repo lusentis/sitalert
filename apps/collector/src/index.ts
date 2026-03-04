@@ -15,7 +15,6 @@ import { UsgsAdapter } from "./adapters/usgs";
 import { EmscAdapter } from "./adapters/emsc";
 import { GdacsAdapter } from "./adapters/gdacs";
 import { NasaFirmsAdapter } from "./adapters/nasa-firms";
-import { ReliefWebAdapter } from "./adapters/reliefweb";
 import { GeoNetNzAdapter } from "./adapters/geonet-nz";
 import { UsgsVolcanoesAdapter } from "./adapters/usgs-volcanoes";
 import { WhoOutbreaksAdapter } from "./adapters/who-outbreaks";
@@ -23,6 +22,8 @@ import { NoaaNhcAdapter } from "./adapters/noaa-nhc";
 import { SmithsonianGvpAdapter } from "./adapters/smithsonian-gvp";
 import { RssAdapter } from "./adapters/rss";
 import { syncTravelAdvisories } from "./adapters/us-travel-advisories";
+import { syncReliefWebSituations } from "./adapters/reliefweb-situations";
+import { syncWikipediaConflicts } from "./adapters/wikipedia-conflicts";
 import { ViaggiareSicuriAdapter } from "./adapters/viaggiaresicuri";
 import { TelegramAdapter } from "./adapters/telegram";
 import type { BaseAdapter } from "./adapters/base";
@@ -106,17 +107,17 @@ async function main(): Promise<void> {
   const structuredConfig = config.structured;
 
   if (structuredConfig["usgs"]?.enabled) {
-    const adapter = new UsgsAdapter(structuredConfig["usgs"].pollingInterval);
+    const adapter = new UsgsAdapter(structuredConfig["usgs"].pollingInterval, redis);
     adapters.push(adapter);
   }
 
   if (structuredConfig["emsc"]?.enabled) {
-    const adapter = new EmscAdapter(structuredConfig["emsc"].pollingInterval);
+    const adapter = new EmscAdapter(structuredConfig["emsc"].pollingInterval, redis);
     adapters.push(adapter);
   }
 
   if (structuredConfig["gdacs"]?.enabled) {
-    const adapter = new GdacsAdapter(structuredConfig["gdacs"].pollingInterval);
+    const adapter = new GdacsAdapter(structuredConfig["gdacs"].pollingInterval, redis);
     adapters.push(adapter);
   }
 
@@ -131,16 +132,13 @@ async function main(): Promise<void> {
     );
   }
 
-  if (structuredConfig["reliefweb"]?.enabled) {
-    const adapter = new ReliefWebAdapter(
-      structuredConfig["reliefweb"].pollingInterval,
-    );
-    adapters.push(adapter);
-  }
+  // ReliefWeb disasters are synced as situations (not events) by
+  // syncReliefWebSituations — no need for the event adapter.
 
   if (structuredConfig["geonet_nz"]?.enabled) {
     const adapter = new GeoNetNzAdapter(
       structuredConfig["geonet_nz"].pollingInterval,
+      redis,
     );
     adapters.push(adapter);
   }
@@ -148,6 +146,7 @@ async function main(): Promise<void> {
   if (structuredConfig["usgs_volcanoes"]?.enabled) {
     const adapter = new UsgsVolcanoesAdapter(
       structuredConfig["usgs_volcanoes"].pollingInterval,
+      redis,
     );
     adapters.push(adapter);
   }
@@ -155,6 +154,7 @@ async function main(): Promise<void> {
   if (structuredConfig["who_outbreaks"]?.enabled) {
     const adapter = new WhoOutbreaksAdapter(
       structuredConfig["who_outbreaks"].pollingInterval,
+      redis,
     );
     adapters.push(adapter);
   }
@@ -162,6 +162,7 @@ async function main(): Promise<void> {
   if (structuredConfig["noaa_nhc"]?.enabled) {
     const adapter = new NoaaNhcAdapter(
       structuredConfig["noaa_nhc"].pollingInterval,
+      redis,
     );
     adapters.push(adapter);
   }
@@ -169,6 +170,7 @@ async function main(): Promise<void> {
   if (structuredConfig["smithsonian_gvp"]?.enabled) {
     const adapter = new SmithsonianGvpAdapter(
       structuredConfig["smithsonian_gvp"].pollingInterval,
+      redis,
     );
     adapters.push(adapter);
   }
@@ -181,6 +183,7 @@ async function main(): Promise<void> {
     const adapter = new RssAdapter(
       rssConfig.data.feeds,
       rssConfig.data.pollingInterval,
+      redis,
     );
     adapters.push(adapter);
   }
@@ -189,12 +192,12 @@ async function main(): Promise<void> {
   const travelConfig = osintConfig["travel_advisories"];
   if (travelConfig && typeof travelConfig === "object" && "enabled" in travelConfig && travelConfig.enabled) {
     // US advisories — sync directly to advisories table (not event pipeline)
-    syncTravelAdvisories(db).catch((err: unknown) => {
+    syncTravelAdvisories(db, redis).catch((err: unknown) => {
       console.error("[collector] US advisory sync failed:", err instanceof Error ? err.message : err);
     });
 
     // ViaggiareSicuri — actual breaking news events, keep in event pipeline
-    const vsAdapter = new ViaggiareSicuriAdapter();
+    const vsAdapter = new ViaggiareSicuriAdapter(undefined, redis);
     adapters.push(vsAdapter);
   }
 
@@ -211,20 +214,113 @@ async function main(): Promise<void> {
     telegramAdapter = new TelegramAdapter();
   }
 
-  // Serial event queue — process one event at a time to avoid
-  // race conditions where parallel events each create their own situation
-  let queue: Promise<void> = Promise.resolve();
+  // Priority queue — still serial (one event at a time) to avoid
+  // race conditions, but high-priority sources get processed first.
+  // This prevents a burst of 200 wildfire pixels from blocking an earthquake.
+  const ADAPTER_PRIORITY: Record<string, number> = {
+    // High priority — OSINT, human-written, low-volume
+    telegram: 3,
+    rss: 2,
+    viaggiaresicuri: 2,
+    "who-outbreaks": 1,
+    gdacs: 1,
+    "smithsonian-gvp": 1,
+    "usgs-volcanoes": 1,
+    // Low priority — high-volume automated feeds
+    usgs: 0,
+    emsc: 0,
+    "geonet-nz": 0,
+    "noaa-nhc": 0,
+    "nasa-firms": 0,
+  };
+
+  type QueuedEvent = { raw: Parameters<typeof pipeline.process>[0]; priority: number };
+  const pendingEvents: QueuedEvent[] = [];
+  let processing = false;
+  let totalProcessed = 0;
+  let currentEvent: { adapter: string; title: string; startedAt: number } | null = null;
+
+  const processNext = async () => {
+    if (processing || pendingEvents.length === 0) return;
+    processing = true;
+
+    // Pick highest priority event (stable: first inserted among equal priority)
+    let bestIdx = 0;
+    for (let i = 1; i < pendingEvents.length; i++) {
+      if (pendingEvents[i].priority > pendingEvents[bestIdx].priority) {
+        bestIdx = i;
+      }
+    }
+    const { raw } = pendingEvents.splice(bestIdx, 1)[0];
+    currentEvent = {
+      adapter: raw.sourceAdapter,
+      title: raw.title ?? raw.rawText.slice(0, 60),
+      startedAt: performance.now(),
+    };
+
+    try {
+      await pipeline.process(raw);
+    } catch (err: unknown) {
+      console.error(
+        "[collector] Pipeline error:",
+        err instanceof Error ? err.message : err,
+      );
+    }
+
+    totalProcessed++;
+    currentEvent = null;
+    processing = false;
+    void processNext();
+  };
 
   const handleEvent = (raw: Parameters<typeof pipeline.process>[0]) => {
-    queue = queue.then(() =>
-      pipeline.process(raw).catch((err: unknown) => {
-        console.error(
-          "[collector] Pipeline error:",
-          err instanceof Error ? err.message : err,
-        );
-      }),
-    );
+    const priority = ADAPTER_PRIORITY[raw.sourceAdapter] ?? 1;
+    pendingEvents.push({ raw, priority });
+    void processNext();
   };
+
+  // Periodic queue status (every 30s)
+  setInterval(() => {
+    if (pendingEvents.length === 0 && !processing) return;
+
+    const byAdapter = new Map<string, number>();
+    for (const e of pendingEvents) {
+      byAdapter.set(e.raw.sourceAdapter, (byAdapter.get(e.raw.sourceAdapter) ?? 0) + 1);
+    }
+    const breakdown = Array.from(byAdapter.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => `${name}=${count}`)
+      .join(" ");
+
+    const nowStr = currentEvent
+      ? `processing="${currentEvent.title.slice(0, 50)}" from=${currentEvent.adapter} elapsed=${((performance.now() - currentEvent.startedAt) / 1000).toFixed(1)}s`
+      : "idle";
+
+    console.log(
+      `[queue] depth=${pendingEvents.length} processed=${totalProcessed} | ${nowStr}${breakdown ? ` | pending: ${breakdown}` : ""}`,
+    );
+  }, 30_000);
+
+  // Seed situations BEFORE starting adapters,
+  // so incoming events can immediately match existing situations.
+  // Wikipedia conflicts first (armed conflicts context), then ReliefWeb (disasters).
+  try {
+    await syncWikipediaConflicts(db, geocoder, redis);
+  } catch (err: unknown) {
+    console.error(
+      "[collector] Wikipedia conflict sync failed:",
+      err instanceof Error ? err.message : err,
+    );
+  }
+
+  try {
+    await syncReliefWebSituations(db, geocoder, redis);
+  } catch (err: unknown) {
+    console.error(
+      "[collector] ReliefWeb situation sync failed:",
+      err instanceof Error ? err.message : err,
+    );
+  }
 
   // Start all polling adapters
   for (const adapter of adapters) {
@@ -272,11 +368,31 @@ async function main(): Promise<void> {
   // Re-sync travel advisories every 12 hours
   if (travelConfig && typeof travelConfig === "object" && "enabled" in travelConfig && travelConfig.enabled) {
     setInterval(() => {
-      syncTravelAdvisories(db).catch((err: unknown) => {
+      syncTravelAdvisories(db, redis).catch((err: unknown) => {
         console.error("[collector] US advisory sync failed:", err instanceof Error ? err.message : err);
       });
     }, 12 * 60 * 60 * 1000);
   }
+
+  // Re-sync Wikipedia conflicts every 24 hours
+  setInterval(() => {
+    syncWikipediaConflicts(db, geocoder, redis).catch((err: unknown) => {
+      console.error(
+        "[collector] Wikipedia conflict re-sync failed:",
+        err instanceof Error ? err.message : err,
+      );
+    });
+  }, 24 * 60 * 60 * 1000);
+
+  // Re-sync ReliefWeb situations every 6 hours
+  setInterval(() => {
+    syncReliefWebSituations(db, geocoder, redis).catch((err: unknown) => {
+      console.error(
+        "[collector] ReliefWeb situation re-sync failed:",
+        err instanceof Error ? err.message : err,
+      );
+    });
+  }, 6 * 60 * 60 * 1000);
 
   // Graceful shutdown
   const shutdown = async (signal: string) => {

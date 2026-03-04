@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Map, useMap, type MapRef, type MapViewport } from "@/components/ui/map";
 import { ChoroplethLayer } from "./choropleth-layer";
 import { EventLayer } from "./event-layer";
@@ -60,6 +60,10 @@ export function MapView({
   const mapRef = useRef<MapRef>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Track stacked features at a clicked point
+  const [stackedFeatures, setStackedFeatures] = useState<GeoJSONFeature[]>([]);
+  const [stackIndex, setStackIndex] = useState(0);
+
   const handleViewportChange = useCallback(
     (_viewport: MapViewport) => {
       const mapInstance = mapRef.current;
@@ -83,10 +87,26 @@ export function MapView({
   );
 
   const handleEventClick = useCallback(
-    (feature: GeoJSONFeature) => {
-      onEventSelect?.(feature);
+    (features: GeoJSONFeature[]) => {
+      setStackedFeatures(features);
+      setStackIndex(0);
+      onEventSelect?.(features[0]);
     },
     [onEventSelect],
+  );
+
+  const handleDeselect = useCallback(() => {
+    setStackedFeatures([]);
+    setStackIndex(0);
+    onDeselectEvent?.();
+  }, [onDeselectEvent]);
+
+  const handleStackNavigate = useCallback(
+    (index: number) => {
+      setStackIndex(index);
+      onEventSelect?.(stackedFeatures[index]);
+    },
+    [stackedFeatures, onEventSelect],
   );
 
   // Fly to the selected event (triggered by both map clicks and sidebar clicks)
@@ -96,11 +116,28 @@ export function MapView({
 
     mapInstance.flyTo({
       center: selectedEvent.geometry.coordinates as [number, number],
-      zoom: Math.max(mapInstance.getZoom(), 8),
+      zoom: Math.max(mapInstance.getZoom(), 5),
       duration: 1200,
       essential: true,
     });
   }, [selectedEvent]);
+
+  // When selectedEvent is set externally (e.g. sidebar click) without going through handleEventClick,
+  // reset the stack to just that single event
+  useEffect(() => {
+    if (selectedEvent && stackedFeatures.length > 0) {
+      const isInStack = stackedFeatures.some(
+        (f) => f.properties.id === selectedEvent.properties.id,
+      );
+      if (!isInStack) {
+        setStackedFeatures([selectedEvent]);
+        setStackIndex(0);
+      }
+    } else if (selectedEvent && stackedFeatures.length === 0) {
+      setStackedFeatures([selectedEvent]);
+      setStackIndex(0);
+    }
+  }, [selectedEvent]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="relative flex-1 h-full" tabIndex={0} role="application" aria-label="Interactive event map">
@@ -121,8 +158,13 @@ export function MapView({
           />
         )}
         <EventLayer data={data} onEventClick={handleEventClick} />
-        {selectedEvent && onDeselectEvent && (
-          <EventPopup feature={selectedEvent} onClose={onDeselectEvent} />
+        {selectedEvent && (
+          <EventPopup
+            features={stackedFeatures}
+            currentIndex={stackIndex}
+            onNavigate={handleStackNavigate}
+            onClose={handleDeselect}
+          />
         )}
         {advisoryPopup}
       </Map>

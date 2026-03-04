@@ -96,7 +96,7 @@ export interface GeoJSONFeature {
     severity: number;
     confidence: number;
     locationName: string;
-    countryCode: string | null;
+    countryCodes: string[] | null;
     timestamp: string;
     ageMinutes: number;
     sourceCount: number;
@@ -129,7 +129,7 @@ export async function queryEventsGeoJSON(
       severity: row.severity,
       confidence: row.confidence,
       locationName: row.locationName,
-      countryCode: row.countryCode,
+      countryCodes: row.countryCodes,
       timestamp: row.timestamp.toISOString(),
       ageMinutes: Math.max(
         0,

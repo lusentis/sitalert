@@ -1,4 +1,5 @@
 import Parser from "rss-parser";
+import type Redis from "ioredis";
 import { BaseAdapter } from "./base";
 import type { Platform, RawEvent } from "@travelrisk/shared";
 
@@ -11,11 +12,12 @@ type NhcItem = {
   "georss:point"?: string;
 };
 
+const TTL_7D = 7 * 24 * 60 * 60;
+
 export class NoaaNhcAdapter extends BaseAdapter {
   readonly name = "noaa-nhc";
   readonly platform: Platform = "rss";
 
-  private seenGuids = new Set<string>();
   private parser: Parser<Record<string, unknown>, NhcItem>;
 
   private static readonly FEED_URLS = [
@@ -23,8 +25,8 @@ export class NoaaNhcAdapter extends BaseAdapter {
     "https://www.nhc.noaa.gov/gis-ep.xml",
   ];
 
-  constructor(pollingInterval = 600_000) {
-    super({ defaultConfidence: 1.0, pollingInterval });
+  constructor(pollingInterval = 600_000, redis?: Redis) {
+    super({ defaultConfidence: 1.0, pollingInterval, redis });
     this.parser = new Parser({
       requestOptions: {
         headers: {
@@ -38,13 +40,15 @@ export class NoaaNhcAdapter extends BaseAdapter {
   }
 
   protected async poll(): Promise<void> {
-    for (const feedUrl of NoaaNhcAdapter.FEED_URLS) {
-      try {
-        await this.pollFeed(feedUrl);
-      } catch (err: unknown) {
+    const results = await Promise.allSettled(
+      NoaaNhcAdapter.FEED_URLS.map((url) => this.pollFeed(url)),
+    );
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
+      if (result.status === "rejected") {
         console.error(
-          `[noaa-nhc] Error polling ${feedUrl}:`,
-          err instanceof Error ? err.message : err,
+          `[noaa-nhc] Error polling ${NoaaNhcAdapter.FEED_URLS[i]}:`,
+          result.reason instanceof Error ? result.reason.message : result.reason,
         );
       }
     }
@@ -62,15 +66,17 @@ export class NoaaNhcAdapter extends BaseAdapter {
     const xml = await response.text();
     const feed = await this.parser.parseString(xml);
 
+    const seen = this.getSeenSet(TTL_7D);
+
     for (const item of feed.items) {
       const guid = item.guid;
-      if (!guid || this.seenGuids.has(guid)) continue;
+      if (!guid || (await seen.has(guid))) continue;
 
       // Skip placeholder/non-storm items (no georss:point means no active storm)
       const georssPoint = item["georss:point"];
       if (!georssPoint) continue;
 
-      this.seenGuids.add(guid);
+      await seen.add(guid);
 
       const parts = georssPoint.split(/\s+/);
       let location: { lat: number; lng: number } | undefined;
@@ -96,7 +102,7 @@ export class NoaaNhcAdapter extends BaseAdapter {
           ? new Date(item.pubDate).toISOString()
           : new Date().toISOString(),
         location,
-        locationName: title,
+        locationName: item.title ?? undefined,
         category: "weather_extreme",
         severity: 3,
         confidence: this.defaultConfidence,
@@ -107,12 +113,6 @@ export class NoaaNhcAdapter extends BaseAdapter {
       };
 
       this.emit(raw);
-    }
-
-    // Prune old GUIDs
-    if (this.seenGuids.size > 10_000) {
-      const arr = Array.from(this.seenGuids);
-      this.seenGuids = new Set(arr.slice(arr.length - 5_000));
     }
   }
 }

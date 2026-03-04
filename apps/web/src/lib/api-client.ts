@@ -103,7 +103,7 @@ export interface SituationEvent {
   category: string;
   severity: number;
   locationName: string;
-  countryCode: string | null;
+  countryCodes: string[] | null;
   timestamp: string;
   sources: Array<{ name: string; platform: string; url?: string }>;
   lng: number;

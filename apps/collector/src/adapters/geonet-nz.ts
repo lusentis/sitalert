@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type Redis from "ioredis";
 import { BaseAdapter } from "./base";
 import type { Platform, RawEvent } from "@travelrisk/shared";
 import { magnitudeToSeverity } from "./usgs";
@@ -27,17 +28,17 @@ const GeoNetResponseSchema = z.object({
   features: z.array(GeoNetFeatureSchema),
 });
 
+const TTL_2H = 2 * 60 * 60;
+
 export class GeoNetNzAdapter extends BaseAdapter {
   readonly name = "geonet-nz";
   readonly platform: Platform = "api";
 
-  private seenIds = new Set<string>();
-
   private static readonly FEED_URL =
     "https://api.geonet.org.nz/quake?MMI=3";
 
-  constructor(pollingInterval = 60_000) {
-    super({ defaultConfidence: 1.0, pollingInterval });
+  constructor(pollingInterval = 60_000, redis?: Redis) {
+    super({ defaultConfidence: 1.0, pollingInterval, redis });
   }
 
   protected async poll(): Promise<void> {
@@ -51,13 +52,15 @@ export class GeoNetNzAdapter extends BaseAdapter {
     const json: unknown = await response.json();
     const data = GeoNetResponseSchema.parse(json);
 
+    const seen = this.getSeenSet(TTL_2H);
+
     for (const feature of data.features) {
       const { publicID, magnitude, depth, locality, time } =
         feature.properties;
 
-      if (this.seenIds.has(publicID)) continue;
+      if (await seen.has(publicID)) continue;
       if (magnitude < 5) continue;
-      this.seenIds.add(publicID);
+      await seen.add(publicID);
 
       const [lng, lat] = feature.geometry.coordinates;
       const severity = magnitudeToSeverity(magnitude);
@@ -86,12 +89,6 @@ export class GeoNetNzAdapter extends BaseAdapter {
       };
 
       this.emit(raw);
-    }
-
-    // Prune old IDs
-    if (this.seenIds.size > 10_000) {
-      const idsArray = Array.from(this.seenIds);
-      this.seenIds = new Set(idsArray.slice(idsArray.length - 5_000));
     }
   }
 }

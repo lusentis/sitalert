@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type Redis from "ioredis";
 import { BaseAdapter } from "./base";
 import type { Platform, RawEvent } from "@travelrisk/shared";
 import { magnitudeToSeverity } from "./usgs";
@@ -28,17 +29,17 @@ const EmscResponseSchema = z.object({
   ),
 });
 
+const TTL_2H = 2 * 60 * 60;
+
 export class EmscAdapter extends BaseAdapter {
   readonly name = "emsc";
   readonly platform: Platform = "api";
 
-  private seenIds = new Set<string>();
-
   private static readonly FEED_URL =
     "https://www.seismicportal.eu/fdsnws/event/1/query?format=json&limit=20";
 
-  constructor(pollingInterval = 60_000) {
-    super({ defaultConfidence: 1.0, pollingInterval });
+  constructor(pollingInterval = 60_000, redis?: Redis) {
+    super({ defaultConfidence: 1.0, pollingInterval, redis });
   }
 
   protected async poll(): Promise<void> {
@@ -50,12 +51,14 @@ export class EmscAdapter extends BaseAdapter {
     const json: unknown = await response.json();
     const data = EmscResponseSchema.parse(json);
 
+    const seen = this.getSeenSet(TTL_2H);
+
     for (const feature of data.features) {
       const { unid, lat, lon, mag, flynn_region, time } = feature.properties;
 
-      if (this.seenIds.has(unid)) continue;
+      if (await seen.has(unid)) continue;
       if (mag < 5) continue;
-      this.seenIds.add(unid);
+      await seen.add(unid);
 
       const severity = magnitudeToSeverity(mag);
 
@@ -81,12 +84,6 @@ export class EmscAdapter extends BaseAdapter {
       };
 
       this.emit(raw);
-    }
-
-    // Prune old IDs
-    if (this.seenIds.size > 10_000) {
-      const idsArray = Array.from(this.seenIds);
-      this.seenIds = new Set(idsArray.slice(idsArray.length - 5_000));
     }
   }
 }

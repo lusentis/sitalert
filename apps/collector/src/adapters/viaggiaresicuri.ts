@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type Redis from "ioredis";
 import { BaseAdapter } from "./base";
 import type { Platform, RawEvent } from "@travelrisk/shared";
 
@@ -115,6 +116,8 @@ function stripHtml(html: string): string {
     .trim();
 }
 
+const TTL_7D = 7 * 24 * 60 * 60;
+
 export class ViaggiareSicuriAdapter extends BaseAdapter {
   readonly name = "viaggiaresicuri";
   readonly platform: Platform = "api";
@@ -122,12 +125,9 @@ export class ViaggiareSicuriAdapter extends BaseAdapter {
   private static readonly API_URL =
     "https://www.viaggiaresicuri.it/ultima_ora/totale.json";
 
-  /** Track seen update IDs to avoid re-emitting */
-  private seenIds = new Set<string>();
-
-  constructor(pollingInterval = 1_800_000) {
+  constructor(pollingInterval = 1_800_000, redis?: Redis) {
     // 30 minutes default
-    super({ defaultConfidence: 0.7, pollingInterval });
+    super({ defaultConfidence: 0.7, pollingInterval, redis });
   }
 
   protected async poll(): Promise<void> {
@@ -145,11 +145,14 @@ export class ViaggiareSicuriAdapter extends BaseAdapter {
     // "section X was updated" notices with no event content, not worth LLM tokens
     const allItems = parsed.ultima_ora;
 
+    const seen = this.getSeenSet(TTL_7D);
+    let emitted = 0;
+
     for (const item of allItems) {
       // Dedup by ID + timestamp to detect edits
       const dedupKey = `${item.id}:${item.tsModifica}`;
-      if (this.seenIds.has(dedupKey)) continue;
-      this.seenIds.add(dedupKey);
+      if (await seen.has(dedupKey)) continue;
+      await seen.add(dedupKey);
 
       const plainText = stripHtml(item.testo);
       if (!plainText) continue;
@@ -171,7 +174,7 @@ export class ViaggiareSicuriAdapter extends BaseAdapter {
         },
         timestamp: new Date(item.tsModifica * 1000).toISOString(),
         locationName: countryName,
-        countryCode,
+        countryCodes: countryCode ? [countryCode] : [],
         confidence: this.defaultConfidence,
         title,
         summary: plainText.slice(0, 500),
@@ -180,16 +183,12 @@ export class ViaggiareSicuriAdapter extends BaseAdapter {
       };
 
       this.emit(raw);
+      emitted++;
     }
 
+    const total = await seen.size();
     console.log(
-      `[${this.name}] Processed ${allItems.length} items (${this.seenIds.size} total tracked)`,
+      `[${this.name}] Processed ${allItems.length} items, emitted ${emitted} new (${total} in seen set)`,
     );
-
-    // Prune old IDs
-    if (this.seenIds.size > 5_000) {
-      const arr = Array.from(this.seenIds);
-      this.seenIds = new Set(arr.slice(arr.length - 2_500));
-    }
   }
 }

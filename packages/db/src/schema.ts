@@ -7,6 +7,7 @@ import {
   timestamp,
   jsonb,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { geographyPoint } from "./custom-types";
@@ -26,7 +27,7 @@ export const events = pgTable(
     confidence: real("confidence").notNull().default(1.0),
     location: geographyPoint("location").notNull(),
     locationName: text("location_name").notNull(),
-    countryCode: text("country_code"),
+    countryCodes: text("country_codes").array(),
     timestamp: timestamp("timestamp", { withTimezone: true }).notNull(),
     sources: jsonb("sources").$type<EventSource[]>().notNull().default([]),
     media: jsonb("media").$type<MediaItem[]>().notNull().default([]),
@@ -60,11 +61,12 @@ export const situations = pgTable(
     id: uuid("id")
       .primaryKey()
       .default(sql`gen_random_uuid()`),
+    externalId: text("external_id"),
     title: text("title").notNull(),
     summary: text("summary").notNull(),
     category: text("category").$type<EventCategory>().notNull(),
     severity: integer("severity").notNull(),
-    countryCode: text("country_code"),
+    countryCodes: text("country_codes").array(),
     location: geographyPoint("location").notNull(),
     radiusKm: integer("radius_km").notNull().default(50),
     eventCount: integer("event_count").notNull().default(1),
@@ -82,6 +84,7 @@ export const situations = pgTable(
       .defaultNow(),
   },
   (table) => [
+    uniqueIndex("situations_external_id_idx").on(table.externalId),
     index("situations_category_status_idx").on(table.category, table.status),
     index("situations_status_last_updated_idx").on(
       table.status,

@@ -10,11 +10,11 @@ interface AdvisoryPopupProps {
   onClose: () => void;
 }
 
-const LEVEL_LABELS: Record<number, string> = {
-  1: "Exercise Normal Precautions",
-  2: "Exercise Increased Caution",
-  3: "Reconsider Travel",
-  4: "Do Not Travel",
+const LEVEL_LABELS: Record<number, { label: string; className: string }> = {
+  1: { label: "Exercise Normal Precautions", className: "text-muted-foreground" },
+  2: { label: "Exercise Increased Caution", className: "text-muted-foreground" },
+  3: { label: "Reconsider Travel", className: "text-amber-500" },
+  4: { label: "Do Not Travel", className: "text-red-700" },
 };
 
 export function AdvisoryPopup({ advisory, lngLat, onClose }: AdvisoryPopupProps) {
@@ -23,7 +23,7 @@ export function AdvisoryPopup({ advisory, lngLat, onClose }: AdvisoryPopupProps)
       <div className="bg-card text-card-foreground border border-border rounded-lg shadow-lg p-3 max-w-[320px] min-w-[240px]">
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex items-center gap-1.5">
-            <ShieldAlert className="h-4 w-4 text-amber-500 shrink-0" />
+            <ShieldAlert className={`h-4 w-4 shrink-0 ${LEVEL_LABELS[advisory.level]?.className ?? "text-muted-foreground"}`} />
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Travel Advisory
             </span>
@@ -42,8 +42,8 @@ export function AdvisoryPopup({ advisory, lngLat, onClose }: AdvisoryPopupProps)
           {advisory.title}
         </h3>
 
-        <div className="text-xs font-medium text-amber-500 mb-2">
-          Level {advisory.level}: {LEVEL_LABELS[advisory.level] ?? "Unknown"}
+        <div className={`text-xs font-medium mb-2 ${LEVEL_LABELS[advisory.level]?.className ?? "text-muted-foreground"}`}>
+          Level {advisory.level}: {LEVEL_LABELS[advisory.level]?.label ?? "Unknown"}
         </div>
 
         <p className="text-xs text-muted-foreground line-clamp-4 mb-2">

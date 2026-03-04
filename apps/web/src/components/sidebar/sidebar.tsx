@@ -1,11 +1,10 @@
 "use client";
 
-import type { GeoJSONFeatureCollection, GeoJSONFeature } from "@travelrisk/db";
-import type { NormalizedEvent } from "@travelrisk/shared";
+import type { SituationWithCoords } from "@travelrisk/db";
 import type { Filters } from "@/hooks/use-filters";
 import { CategoryFilter } from "./category-filter";
 import { SeverityFilter } from "./severity-filter";
-import { EventFeed } from "./event-feed";
+import { SituationFeed } from "./situation-feed";
 import { WelcomeBanner } from "./welcome-banner";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
@@ -15,24 +14,18 @@ import { useOnboardingDismissed } from "@/hooks/use-onboarding";
 
 interface SidebarContentProps {
   filters: Filters;
-  data: GeoJSONFeatureCollection | null;
-  lastStreamEvent: NormalizedEvent | null;
+  situations: SituationWithCoords[] | null;
   isLoading: boolean;
   isConnected: boolean;
   counts?: Record<string, number>;
-  onEventClick: (feature: GeoJSONFeature) => void;
-  selectedEventId?: string | null;
 }
 
 function SidebarContent({
   filters,
-  data,
-  lastStreamEvent,
+  situations,
   isLoading,
   isConnected,
   counts,
-  onEventClick,
-  selectedEventId,
 }: SidebarContentProps) {
   const { dismissed, dismiss } = useOnboardingDismissed();
 
@@ -70,24 +63,23 @@ function SidebarContent({
         </CollapsibleContent>
       </Collapsible>
       <Separator />
-      <EventFeed
-        data={data}
-        lastStreamEvent={lastStreamEvent}
-        onEventClick={onEventClick}
+      <SituationFeed
+        situations={situations}
         isLoading={isLoading}
-        selectedEventId={selectedEventId}
       />
     </div>
   );
 }
 
 export function Sidebar(props: SidebarContentProps) {
+  const situationCount = props.situations?.length ?? 0;
+
   return (
     <>
       {/* Desktop sidebar */}
       <aside
         role="complementary"
-        aria-label="Event sidebar"
+        aria-label="Situations sidebar"
         className="hidden md:flex w-80 lg:w-96 shrink-0 h-screen flex-col bg-card border-r border-border overflow-y-auto overflow-x-hidden"
       >
         <SidebarContent {...props} />
@@ -98,14 +90,14 @@ export function Sidebar(props: SidebarContentProps) {
         <Drawer.Root>
           <Drawer.Trigger asChild>
             <button
-              aria-label="Open event panel"
+              aria-label="Open situations panel"
               className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-card text-card-foreground border border-border rounded-full px-4 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-lg flex items-center gap-2 transition-[transform,box-shadow] duration-150 motion-safe:active:scale-95 active:shadow-md"
             >
               <Activity className="h-4 w-4" />
-              <span className="text-sm font-medium">Events</span>
-              {props.data && props.data.features.length > 0 && (
+              <span className="text-sm font-medium">Situations</span>
+              {situationCount > 0 && (
                 <span className="text-xs font-bold tabular-nums bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">
-                  {props.data.features.length}
+                  {situationCount}
                 </span>
               )}
               {props.isConnected && (

@@ -1,4 +1,5 @@
 import Parser from "rss-parser";
+import type Redis from "ioredis";
 import { BaseAdapter } from "./base";
 import type { Platform, RawEvent } from "@travelrisk/shared";
 
@@ -11,18 +12,19 @@ type GvpItem = {
   "georss:point"?: string;
 };
 
+const TTL_7D = 7 * 24 * 60 * 60;
+
 export class SmithsonianGvpAdapter extends BaseAdapter {
   readonly name = "smithsonian-gvp";
   readonly platform: Platform = "rss";
 
-  private seenGuids = new Set<string>();
   private parser: Parser<Record<string, unknown>, GvpItem>;
 
   private static readonly FEED_URL =
     "https://volcano.si.edu/news/WeeklyVolcanoRSS.xml";
 
-  constructor(pollingInterval = 86_400_000) {
-    super({ defaultConfidence: 0.9, pollingInterval });
+  constructor(pollingInterval = 86_400_000, redis?: Redis) {
+    super({ defaultConfidence: 0.9, pollingInterval, redis });
     this.parser = new Parser({
       requestOptions: {
         headers: {
@@ -47,10 +49,12 @@ export class SmithsonianGvpAdapter extends BaseAdapter {
     const xml = await response.text();
     const feed = await this.parser.parseString(xml);
 
+    const seen = this.getSeenSet(TTL_7D);
+
     for (const item of feed.items) {
       const guid = item.guid;
-      if (!guid || this.seenGuids.has(guid)) continue;
-      this.seenGuids.add(guid);
+      if (!guid || (await seen.has(guid))) continue;
+      await seen.add(guid);
 
       let location: { lat: number; lng: number } | undefined;
       const georssPoint = item["georss:point"];
@@ -77,7 +81,7 @@ export class SmithsonianGvpAdapter extends BaseAdapter {
           ? new Date(item.pubDate).toISOString()
           : new Date().toISOString(),
         location,
-        locationName: title,
+        locationName: item.title ?? undefined,
         category: "natural_disaster",
         severity: 3,
         confidence: this.defaultConfidence,
@@ -88,12 +92,6 @@ export class SmithsonianGvpAdapter extends BaseAdapter {
       };
 
       this.emit(raw);
-    }
-
-    // Prune old GUIDs
-    if (this.seenGuids.size > 10_000) {
-      const arr = Array.from(this.seenGuids);
-      this.seenGuids = new Set(arr.slice(arr.length - 5_000));
     }
   }
 }

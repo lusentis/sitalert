@@ -61,7 +61,8 @@ export class Classifier {
 
   async classify(rawText: string): Promise<ClassificationResult | null> {
     try {
-      const { object } = await withRetry(() =>
+      const t0 = performance.now();
+      const { object, usage, response } = await withRetry(() =>
         generateObject({
           model: openai(this.model),
           // model: groq(this.model),
@@ -69,6 +70,11 @@ export class Classifier {
           system: SYSTEM_PROMPT,
           prompt: `Analyze this text and classify it:\n\n${rawText.slice(0, 2000)}`,
         }),
+      );
+      const ms = (performance.now() - t0).toFixed(0);
+      const modelId = response?.modelId ?? this.model;
+      console.log(
+        `[classifier] model=${modelId} time=${ms}ms tokens=${usage.promptTokens}+${usage.completionTokens}=${usage.totalTokens} inputChars=${rawText.length}`,
       );
 
       if (!object.relevant) {

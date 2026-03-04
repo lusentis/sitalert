@@ -1,4 +1,5 @@
 import Parser from "rss-parser";
+import type Redis from "ioredis";
 import { BaseAdapter } from "./base";
 import type { Platform, RawEvent, EventCategory } from "@travelrisk/shared";
 
@@ -59,17 +60,18 @@ function parseGeoPoint(
   return undefined;
 }
 
+const TTL_7D = 7 * 24 * 60 * 60;
+
 export class GdacsAdapter extends BaseAdapter {
   readonly name = "gdacs";
   readonly platform: Platform = "api";
 
-  private seenGuids = new Set<string>();
   private parser: Parser<Record<string, unknown>, GdacsCustomItem>;
 
   private static readonly FEED_URL = "https://www.gdacs.org/xml/rss.xml";
 
-  constructor(pollingInterval = 300_000) {
-    super({ defaultConfidence: 1.0, pollingInterval });
+  constructor(pollingInterval = 300_000, redis?: Redis) {
+    super({ defaultConfidence: 1.0, pollingInterval, redis });
     this.parser = new Parser({
       requestOptions: {
         headers: {
@@ -91,10 +93,11 @@ export class GdacsAdapter extends BaseAdapter {
   protected async poll(): Promise<void> {
     const feed = await this.parser.parseURL(GdacsAdapter.FEED_URL);
 
+    const seen = this.getSeenSet(TTL_7D);
+
     for (const item of feed.items) {
       const guid = item.guid;
-      if (!guid || this.seenGuids.has(guid)) continue;
-      this.seenGuids.add(guid);
+      if (!guid || (await seen.has(guid))) continue;
 
       const alertLevel = item["gdacs:alertlevel"] ?? "Green";
       const eventType = item["gdacs:eventtype"] ?? "EQ";
@@ -102,13 +105,24 @@ export class GdacsAdapter extends BaseAdapter {
       const category: EventCategory =
         EVENT_TYPE_CATEGORY[eventType] ?? "natural_disaster";
 
+      // Skip Green alerts — too many low-impact events (minor quakes, etc.)
+      // Only Orange (severity 3) and Red (severity 5) are worth pipeline processing
+      if (alertLevel === "Green") continue;
+
+      await seen.add(guid);
+
       const location = parseGeoPoint(item);
+
+      // Extract location from title (e.g. "Green earthquake alert (...) in Tonga")
+      const titleStr = item.title ?? "Unknown GDACS event";
+      const inMatch = titleStr.match(/ in (.+)$/);
+      const locationName = inMatch?.[1] ?? undefined;
 
       const raw: RawEvent = {
         sourceAdapter: this.name,
         platform: this.platform,
         externalId: guid,
-        rawText: `${item.title ?? "Unknown GDACS event"}\n${item.contentSnippet ?? ""}`,
+        rawText: `${titleStr}\n${item.contentSnippet ?? ""}`,
         rawData: {
           alertLevel,
           eventType,
@@ -118,23 +132,17 @@ export class GdacsAdapter extends BaseAdapter {
           ? new Date(item.pubDate).toISOString()
           : new Date().toISOString(),
         location,
-        locationName: item.title,
+        locationName,
         category,
         severity,
         confidence: this.defaultConfidence,
-        title: item.title ?? `GDACS Alert - ${eventType}`,
+        title: titleStr,
         summary: item.contentSnippet ?? item.title ?? "",
         url: item.link,
         media: [],
       };
 
       this.emit(raw);
-    }
-
-    // Prune old GUIDs
-    if (this.seenGuids.size > 10_000) {
-      const arr = Array.from(this.seenGuids);
-      this.seenGuids = new Set(arr.slice(arr.length - 5_000));
     }
   }
 }

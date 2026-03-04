@@ -1,14 +1,19 @@
 /**
  * Retry wrapper with exponential backoff for rate-limited LLM calls.
- * Parses Groq's "Please try again in Xs" header to wait the right amount.
  */
 export async function withRetry<T>(
   fn: () => Promise<T>,
-  { maxAttempts = 5, baseDelayMs = 2000 } = {},
+  { maxAttempts = 3, baseDelayMs = 1000 } = {},
 ): Promise<T> {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      return await fn();
+      const t0 = performance.now();
+      const result = await fn();
+      const ms = (performance.now() - t0).toFixed(0);
+      if (attempt > 1) {
+        console.log(`[retry] Succeeded on attempt ${attempt} (${ms}ms)`);
+      }
+      return result;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       const isRateLimit =
@@ -18,7 +23,7 @@ export async function withRetry<T>(
         throw err;
       }
 
-      // Parse "try again in Xs" from Groq error
+      // Parse "try again in Xs" from error message
       const match = message.match(/try again in ([\d.]+)s/);
       const waitMs = match
         ? Math.ceil(parseFloat(match[1]) * 1000) + 500

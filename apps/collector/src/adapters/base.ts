@@ -1,4 +1,6 @@
+import type Redis from "ioredis";
 import type { Platform, RawEvent, EventCallback } from "@travelrisk/shared";
+import { SeenSet } from "../processing/seen-set";
 
 export abstract class BaseAdapter {
   abstract readonly name: string;
@@ -11,9 +13,29 @@ export abstract class BaseAdapter {
   private consecutiveErrors = 0;
   private readonly maxBackoff = 300_000; // 5 min max
 
-  constructor(opts: { defaultConfidence?: number; pollingInterval: number }) {
+  protected readonly redis: Redis | null;
+  private _seenSet: SeenSet | null = null;
+
+  constructor(opts: {
+    defaultConfidence?: number;
+    pollingInterval: number;
+    redis?: Redis;
+    seenSetTtl?: number;
+  }) {
     this.defaultConfidence = opts.defaultConfidence ?? 1.0;
     this.pollingInterval = opts.pollingInterval;
+    this.redis = opts.redis ?? null;
+  }
+
+  /** Lazily create SeenSet — requires `name` which is set by subclass */
+  protected getSeenSet(ttlSeconds: number, namespace?: string): SeenSet {
+    if (!this._seenSet) {
+      if (!this.redis) {
+        throw new Error(`[${this.name}] Redis required for SeenSet`);
+      }
+      this._seenSet = new SeenSet(this.redis, namespace ?? this.name, ttlSeconds);
+    }
+    return this._seenSet;
   }
 
   async start(callback: EventCallback): Promise<void> {

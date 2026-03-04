@@ -15,6 +15,7 @@ export { getStats24h, type EventStats } from "./stats";
 export {
   findActiveSituations,
   createSituation,
+  upsertSituation,
   updateSituation,
   resolveExpiredSituations,
   querySituationsForFeed,

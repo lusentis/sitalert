@@ -5,11 +5,13 @@ import { CATEGORY_METADATA, formatRelativeTime, isEventCategory } from "@travelr
 import { MapPopup } from "@/components/ui/map";
 import { Badge } from "@/components/ui/badge";
 import { SeverityBadge } from "@/components/common/severity-badge";
-import { MapPin, Clock, X, ExternalLink, Layers } from "lucide-react";
+import { MapPin, Clock, X, ExternalLink, Layers, ChevronLeft, ChevronRight } from "lucide-react";
 import { CATEGORY_ICONS } from "@/lib/category-icons";
 
 interface EventPopupProps {
-  feature: GeoJSONFeature;
+  features: GeoJSONFeature[];
+  currentIndex: number;
+  onNavigate: (index: number) => void;
   onClose: () => void;
 }
 
@@ -19,7 +21,10 @@ function formatSourceName(name: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-export function EventPopup({ feature, onClose }: EventPopupProps) {
+export function EventPopup({ features, currentIndex, onNavigate, onClose }: EventPopupProps) {
+  const feature = features[currentIndex];
+  if (!feature) return null;
+
   const { properties, geometry } = feature;
   const [lng, lat] = geometry.coordinates;
   const categoryKey = properties.category;
@@ -32,6 +37,7 @@ export function EventPopup({ feature, onClose }: EventPopupProps) {
 
   const sources = properties.sources ?? [];
   const firstUrl = sources.find((s) => s.url)?.url;
+  const hasMultiple = features.length > 1;
 
   return (
     <MapPopup longitude={lng} latitude={lat} onClose={onClose}>
@@ -117,6 +123,30 @@ export function EventPopup({ feature, onClose }: EventPopupProps) {
             <ExternalLink className="h-3 w-3" />
             View source
           </a>
+        )}
+
+        {hasMultiple && (
+          <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+            <button
+              type="button"
+              aria-label="Previous event"
+              onClick={() => onNavigate((currentIndex - 1 + features.length) % features.length)}
+              className="p-0.5 rounded text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {currentIndex + 1} / {features.length}
+            </span>
+            <button
+              type="button"
+              aria-label="Next event"
+              onClick={() => onNavigate((currentIndex + 1) % features.length)}
+              className="p-0.5 rounded text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring transition-colors"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         )}
       </div>
     </MapPopup>
