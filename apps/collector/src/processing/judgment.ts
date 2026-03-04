@@ -2,6 +2,7 @@ import { generateObject } from "ai";
 import { createGroq } from "@ai-sdk/groq";
 import { z } from "zod";
 import type { EventWithCoords, SituationWithCoords } from "@travelrisk/db";
+import { withRetry } from "./retry";
 
 export const judgmentSchema = z.object({
   duplicateOf: z
@@ -108,12 +109,14 @@ ${formatSituations(activeSituations)}
 
 Analyze the new event against the candidates and situations above.`;
 
-      const { object } = await generateObject({
-        model: groq(this.model),
-        schema: judgmentSchema,
-        system: SYSTEM_PROMPT,
-        prompt,
-      });
+      const { object } = await withRetry(() =>
+        generateObject({
+          model: groq(this.model),
+          schema: judgmentSchema,
+          system: SYSTEM_PROMPT,
+          prompt,
+        }),
+      );
 
       return object;
     } catch (err: unknown) {

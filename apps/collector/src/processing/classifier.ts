@@ -2,6 +2,7 @@ import { generateObject } from "ai";
 import { createGroq } from "@ai-sdk/groq";
 import { z } from "zod";
 import { EVENT_CATEGORIES } from "@travelrisk/shared";
+import { withRetry } from "./retry";
 
 const classificationSchema = z.object({
   relevant: z
@@ -57,12 +58,14 @@ export class Classifier {
 
   async classify(rawText: string): Promise<ClassificationResult | null> {
     try {
-      const { object } = await generateObject({
-        model: groq(this.model),
-        schema: classificationSchema,
-        system: SYSTEM_PROMPT,
-        prompt: `Analyze this text and classify it:\n\n${rawText.slice(0, 2000)}`,
-      });
+      const { object } = await withRetry(() =>
+        generateObject({
+          model: groq(this.model),
+          schema: classificationSchema,
+          system: SYSTEM_PROMPT,
+          prompt: `Analyze this text and classify it:\n\n${rawText.slice(0, 2000)}`,
+        }),
+      );
 
       if (!object.relevant) {
         return null;
