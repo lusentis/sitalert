@@ -12,10 +12,10 @@ export interface SituationWithCoords extends Situation {
 
 export async function findActiveSituations(
   db: DbClient,
-  lat: number,
-  lng: number,
+  _lat: number,
+  _lng: number,
   category: EventCategory,
-  withinKm: number = 500,
+  _withinKm: number = 500,
 ): Promise<SituationWithCoords[]> {
   const rows = await db
     .select({
@@ -28,7 +28,6 @@ export async function findActiveSituations(
       and(
         eq(situations.status, "active"),
         sql`${situations.category} = ${category}`,
-        sql`ST_DWithin(${situations.location}, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, ${withinKm * 1000})`,
       ),
     )
     .orderBy(desc(situations.lastUpdated));
