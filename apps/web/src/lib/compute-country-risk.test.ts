@@ -27,8 +27,8 @@ describe("advisoryColor", () => {
     expect(advisoryColor(1)).toBe("transparent");
   });
 
-  it("returns amber for level 2", () => {
-    expect(advisoryColor(2)).toBe("#E2B553");
+  it("returns transparent for level 2", () => {
+    expect(advisoryColor(2)).toBe("transparent");
   });
 
   it("returns orange for level 3", () => {
@@ -46,8 +46,8 @@ describe("advisoryColor", () => {
 });
 
 describe("ADVISORY_LEVELS", () => {
-  it("has 3 visible levels for legend (excludes level 1)", () => {
-    expect(ADVISORY_LEVELS).toHaveLength(3);
-    expect(ADVISORY_LEVELS[0].level).toBe(2);
+  it("has 2 visible levels for legend (only level 3-4)", () => {
+    expect(ADVISORY_LEVELS).toHaveLength(2);
+    expect(ADVISORY_LEVELS[0].level).toBe(3);
   });
 });

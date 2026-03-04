@@ -13,7 +13,7 @@ export function ChoroplethToggle({ active, onToggle }: ChoroplethToggleProps) {
     <button
       onClick={onToggle}
       aria-pressed={active}
-      aria-label={active ? "Hide country risk layer" : "Show country risk layer"}
+      aria-label={active ? "Hide travel advisories layer" : "Show travel advisories layer"}
       className={cn(
         "bg-card/90 backdrop-blur border border-border rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-lg transition-colors",
         active
@@ -22,7 +22,7 @@ export function ChoroplethToggle({ active, onToggle }: ChoroplethToggleProps) {
       )}
     >
       <Layers className="h-3.5 w-3.5" />
-      <span className="text-xs font-medium">Risk</span>
+      <span className="text-xs font-medium">Advisories</span>
     </button>
   );
 }

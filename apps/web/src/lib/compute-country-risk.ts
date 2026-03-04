@@ -17,7 +17,7 @@ export function buildAdvisoryScores(
 /** Advisory level colors (hex for MapLibre GL compatibility) */
 const ADVISORY_COLORS: Record<number, string> = {
   1: "transparent",       // Exercise Normal Precautions — no fill
-  2: "#E2B553",           // Exercise Increased Caution — faint amber
+  2: "transparent",       // Exercise Increased Caution — too generic to show
   3: "#D48A2E",           // Reconsider Travel — orange
   4: "#8B2D15",           // Do Not Travel — deep red
 };
@@ -29,7 +29,6 @@ export function advisoryColor(level: number): string {
 
 /** Exported for legend rendering. */
 export const ADVISORY_LEVELS = [
-  { label: "Caution", level: 2, color: ADVISORY_COLORS[2] },
-  { label: "Reconsider", level: 3, color: ADVISORY_COLORS[3] },
+  { label: "Reconsider Travel", level: 3, color: ADVISORY_COLORS[3] },
   { label: "Do Not Travel", level: 4, color: ADVISORY_COLORS[4] },
 ] as const;
