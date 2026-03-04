@@ -96,7 +96,7 @@ async function main(): Promise<void> {
   // Processing components
   const classifier = new Classifier();
   const geocoder = new Geocoder(redis);
-  const deduplicator = new Deduplicator(db);
+  const deduplicator = new Deduplicator();
   const pipeline = new Pipeline(db, redis, classifier, geocoder, deduplicator);
 
   // Collect all adapters for shutdown
