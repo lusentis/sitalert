@@ -22,7 +22,7 @@ import { WhoOutbreaksAdapter } from "./adapters/who-outbreaks";
 import { NoaaNhcAdapter } from "./adapters/noaa-nhc";
 import { SmithsonianGvpAdapter } from "./adapters/smithsonian-gvp";
 import { RssAdapter } from "./adapters/rss";
-import { UsTravelAdvisoriesAdapter } from "./adapters/us-travel-advisories";
+import { syncTravelAdvisories } from "./adapters/us-travel-advisories";
 import { ViaggiareSicuriAdapter } from "./adapters/viaggiaresicuri";
 import { TelegramAdapter } from "./adapters/telegram";
 import type { BaseAdapter } from "./adapters/base";
@@ -188,9 +188,12 @@ async function main(): Promise<void> {
   // Travel advisories
   const travelConfig = osintConfig["travel_advisories"];
   if (travelConfig && typeof travelConfig === "object" && "enabled" in travelConfig && travelConfig.enabled) {
-    const usAdapter = new UsTravelAdvisoriesAdapter();
-    adapters.push(usAdapter);
+    // US advisories — sync directly to advisories table (not event pipeline)
+    syncTravelAdvisories(db).catch((err: unknown) => {
+      console.error("[collector] US advisory sync failed:", err instanceof Error ? err.message : err);
+    });
 
+    // ViaggiareSicuri — actual breaking news events, keep in event pipeline
     const vsAdapter = new ViaggiareSicuriAdapter();
     adapters.push(vsAdapter);
   }
@@ -265,6 +268,15 @@ async function main(): Promise<void> {
       console.error("[situations] Error resolving expired:", err instanceof Error ? err.message : err);
     }
   }, 60 * 60 * 1000);
+
+  // Re-sync travel advisories every 12 hours
+  if (travelConfig && typeof travelConfig === "object" && "enabled" in travelConfig && travelConfig.enabled) {
+    setInterval(() => {
+      syncTravelAdvisories(db).catch((err: unknown) => {
+        console.error("[collector] US advisory sync failed:", err instanceof Error ? err.message : err);
+      });
+    }, 12 * 60 * 60 * 1000);
+  }
 
   // Graceful shutdown
   const shutdown = async (signal: string) => {
