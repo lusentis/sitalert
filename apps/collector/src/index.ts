@@ -208,14 +208,19 @@ async function main(): Promise<void> {
     telegramAdapter = new TelegramAdapter();
   }
 
-  // Event handler
+  // Serial event queue — process one event at a time to avoid
+  // race conditions where parallel events each create their own situation
+  let queue: Promise<void> = Promise.resolve();
+
   const handleEvent = (raw: Parameters<typeof pipeline.process>[0]) => {
-    pipeline.process(raw).catch((err: unknown) => {
-      console.error(
-        "[collector] Pipeline error:",
-        err instanceof Error ? err.message : err,
-      );
-    });
+    queue = queue.then(() =>
+      pipeline.process(raw).catch((err: unknown) => {
+        console.error(
+          "[collector] Pipeline error:",
+          err instanceof Error ? err.message : err,
+        );
+      }),
+    );
   };
 
   // Start all polling adapters
