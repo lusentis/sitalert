@@ -6,6 +6,7 @@ import { useFilters } from "@/hooks/use-filters";
 import { useMapEvents } from "@/hooks/use-map-events";
 import { useSituations } from "@/hooks/use-situations";
 import { useEventStream } from "@/hooks/use-event-stream";
+import { useStats } from "@/hooks/use-stats";
 import { MapView } from "@/components/map/map-view";
 import { MapLegend } from "@/components/map/map-legend";
 import { ChoroplethToggle } from "@/components/map/choropleth-toggle";
@@ -21,19 +22,20 @@ export function MainPage() {
     null,
   );
 
-  const { data, isLoading: eventsLoading, refetch } = useMapEvents({
+  const { data, isLoading: eventsLoading, error: eventsError, refetch } = useMapEvents({
     categories: filters.categories,
     minSeverity: filters.minSeverity,
     after: filters.after,
   });
 
-  const { data: situations, isLoading: situationsLoading, refetch: refetchSituations } = useSituations({
+  const { data: situations, isLoading: situationsLoading, error: situationsError, refetch: refetchSituations } = useSituations({
     categories: filters.categories,
     minSeverity: filters.minSeverity,
     after: filters.after,
   });
 
   const { lastEvent, isConnected } = useEventStream();
+  const { data: stats, refetch: refetchStats } = useStats();
 
   const [advisories, setAdvisories] = useState<AdvisoryData[]>([]);
   const [selectedAdvisory, setSelectedAdvisory] = useState<{
@@ -58,8 +60,9 @@ export function MainPage() {
     if (lastEvent) {
       refetch();
       refetchSituations();
+      refetchStats();
     }
-  }, [lastEvent, refetch, refetchSituations]);
+  }, [lastEvent, refetch, refetchSituations, refetchStats]);
 
   const [choroplethVisible, setChoroplethVisible] = useState(true);
 
@@ -79,7 +82,7 @@ export function MainPage() {
       );
       if (advisory) {
         setSelectedAdvisory({ advisory, lngLat });
-        setSelectedEvent(null); // dismiss event popup when advisory is selected
+        setSelectedEvent(null);
       }
     },
     [advisories],
@@ -101,12 +104,15 @@ export function MainPage() {
 
   const handleEventSelect = useCallback((feature: GeoJSONFeature) => {
     setSelectedEvent(feature);
-    setSelectedAdvisory(null); // dismiss advisory popup when an event is selected
+    setSelectedAdvisory(null);
   }, []);
 
   const handleDeselectEvent = useCallback(() => {
     setSelectedEvent(null);
   }, []);
+
+  // Combine errors for display
+  const error = eventsError ?? situationsError;
 
   return (
     <TooltipProvider delayDuration={400}>
@@ -117,6 +123,13 @@ export function MainPage() {
           isLoading={situationsLoading}
           isConnected={isConnected}
           counts={categoryCounts}
+          stats={stats}
+          error={error}
+          events={data}
+          lastStreamEvent={lastEvent}
+          eventsLoading={eventsLoading}
+          onEventClick={handleEventSelect}
+          selectedEventId={selectedEvent?.properties.id ?? null}
         />
         <div className="relative flex-1">
           <MapView

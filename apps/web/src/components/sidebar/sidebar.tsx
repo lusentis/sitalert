@@ -1,15 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import type { SituationWithCoords } from "@travelrisk/db";
+import type { GeoJSONFeatureCollection, GeoJSONFeature } from "@travelrisk/db";
+import type { NormalizedEvent } from "@travelrisk/shared";
+import type { EventStats } from "@travelrisk/db";
 import type { Filters } from "@/hooks/use-filters";
 import { CategoryFilter } from "./category-filter";
 import { SeverityFilter } from "./severity-filter";
 import { SituationFeed } from "./situation-feed";
+import { EventFeed } from "./event-feed";
 import { WelcomeBanner } from "./welcome-banner";
+import { StatsBar } from "./stats-bar";
+import { SearchInput } from "./search-input";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { Drawer } from "vaul";
-import { Activity, ChevronRight } from "lucide-react";
+import { Activity, ChevronRight, AlertCircle } from "lucide-react";
 import { useOnboardingDismissed } from "@/hooks/use-onboarding";
 
 interface SidebarContentProps {
@@ -18,7 +25,16 @@ interface SidebarContentProps {
   isLoading: boolean;
   isConnected: boolean;
   counts?: Record<string, number>;
+  stats: EventStats | null;
+  error: string | null;
+  events: GeoJSONFeatureCollection | null;
+  lastStreamEvent: NormalizedEvent | null;
+  eventsLoading: boolean;
+  onEventClick: (feature: GeoJSONFeature) => void;
+  selectedEventId?: string | null;
 }
+
+type FeedTab = "situations" | "events";
 
 function SidebarContent({
   filters,
@@ -26,8 +42,17 @@ function SidebarContent({
   isLoading,
   isConnected,
   counts,
+  stats,
+  error,
+  events,
+  lastStreamEvent,
+  eventsLoading,
+  onEventClick,
+  selectedEventId,
 }: SidebarContentProps) {
   const { dismissed, dismiss } = useOnboardingDismissed();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<FeedTab>("situations");
 
   return (
     <div className="flex flex-col h-full p-4 space-y-4 min-w-0">
@@ -42,8 +67,22 @@ function SidebarContent({
           </div>
         )}
       </div>
+
+      <StatsBar stats={stats} />
+
       <Separator />
+
+      {error && (
+        <div className="flex items-start gap-2 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
+          <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
       {!dismissed && <WelcomeBanner onDismiss={dismiss} />}
+
+      <SearchInput value={searchQuery} onChange={setSearchQuery} />
+
       <CategoryFilter
         selected={filters.categories}
         onToggle={filters.toggleCategory}
@@ -63,10 +102,46 @@ function SidebarContent({
         </CollapsibleContent>
       </Collapsible>
       <Separator />
-      <SituationFeed
-        situations={situations}
-        isLoading={isLoading}
-      />
+
+      {/* Feed tab toggle */}
+      <div className="flex gap-1 bg-muted/50 rounded-md p-0.5">
+        <button
+          onClick={() => setActiveTab("situations")}
+          className={`flex-1 text-xs font-medium py-1.5 rounded transition-colors ${
+            activeTab === "situations"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Situations
+        </button>
+        <button
+          onClick={() => setActiveTab("events")}
+          className={`flex-1 text-xs font-medium py-1.5 rounded transition-colors ${
+            activeTab === "events"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Events
+        </button>
+      </div>
+
+      {activeTab === "situations" ? (
+        <SituationFeed
+          situations={situations}
+          isLoading={isLoading}
+          searchQuery={searchQuery}
+        />
+      ) : (
+        <EventFeed
+          data={events}
+          lastStreamEvent={lastStreamEvent}
+          onEventClick={onEventClick}
+          isLoading={eventsLoading}
+          selectedEventId={selectedEventId}
+        />
+      )}
     </div>
   );
 }

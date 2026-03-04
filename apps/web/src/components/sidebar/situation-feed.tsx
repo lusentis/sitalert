@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { SituationWithCoords } from "@travelrisk/db";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SituationCard } from "./situation-card";
@@ -9,9 +9,10 @@ import { SituationDialog } from "./situation-dialog";
 interface SituationFeedProps {
   situations: SituationWithCoords[] | null;
   isLoading: boolean;
+  searchQuery?: string;
 }
 
-export function SituationFeed({ situations, isLoading }: SituationFeedProps) {
+export function SituationFeed({ situations, isLoading, searchQuery }: SituationFeedProps) {
   const [selectedSituation, setSelectedSituation] = useState<SituationWithCoords | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -20,9 +21,19 @@ export function SituationFeed({ situations, isLoading }: SituationFeedProps) {
     setDialogOpen(true);
   };
 
-  const items = (situations ?? []).slice().sort(
-    (a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime(),
-  );
+  const items = useMemo(() => {
+    const sorted = (situations ?? []).slice().sort(
+      (a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime(),
+    );
+    if (!searchQuery?.trim()) return sorted;
+    const q = searchQuery.toLowerCase();
+    return sorted.filter(
+      (s) =>
+        s.title.toLowerCase().includes(q) ||
+        (s.summary?.toLowerCase().includes(q) ?? false) ||
+        (s.countryCodes?.some((c) => c.toLowerCase().includes(q)) ?? false),
+    );
+  }, [situations, searchQuery]);
 
   return (
     <div className="flex-1 min-h-0 min-w-0">

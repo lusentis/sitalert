@@ -11,6 +11,7 @@ import { SeverityBadge } from "@/components/common/severity-badge";
 import { CATEGORY_ICONS } from "@/lib/category-icons";
 import { cn } from "@/lib/utils";
 import { MapPin, Layers } from "lucide-react";
+import { formatCountryCodes } from "@/lib/country-codes";
 
 interface SituationCardProps {
   situation: SituationWithCoords;
@@ -54,7 +55,7 @@ export function SituationCard({ situation, onClick, isSelected }: SituationCardP
           {situation.countryCodes && situation.countryCodes.length > 0 && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
               <MapPin className="h-3 w-3 shrink-0" />
-              <span className="truncate">{situation.countryCodes.join(", ")}</span>
+              <span className="truncate">{formatCountryCodes(situation.countryCodes)}</span>
             </div>
           )}
           <div className="flex items-center gap-2">
