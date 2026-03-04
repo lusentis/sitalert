@@ -32,6 +32,8 @@ interface SidebarContentProps {
   eventsLoading: boolean;
   onEventClick: (feature: GeoJSONFeature) => void;
   selectedEventId?: string | null;
+  deepLinkSituationId?: string | null;
+  onSituationSelect?: (id: string | null) => void;
 }
 
 type FeedTab = "situations" | "events";
@@ -49,6 +51,8 @@ function SidebarContent({
   eventsLoading,
   onEventClick,
   selectedEventId,
+  deepLinkSituationId,
+  onSituationSelect,
 }: SidebarContentProps) {
   const { dismissed, dismiss } = useOnboardingDismissed();
   const [searchQuery, setSearchQuery] = useState("");
@@ -132,6 +136,8 @@ function SidebarContent({
           situations={situations}
           isLoading={isLoading}
           searchQuery={searchQuery}
+          deepLinkSituationId={deepLinkSituationId}
+          onSituationSelect={onSituationSelect}
         />
       ) : (
         <EventFeed

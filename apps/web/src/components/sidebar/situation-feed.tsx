@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { SituationWithCoords } from "@travelrisk/db";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SituationCard } from "./situation-card";
@@ -10,15 +10,31 @@ interface SituationFeedProps {
   situations: SituationWithCoords[] | null;
   isLoading: boolean;
   searchQuery?: string;
+  deepLinkSituationId?: string | null;
+  onSituationSelect?: (id: string | null) => void;
 }
 
-export function SituationFeed({ situations, isLoading, searchQuery }: SituationFeedProps) {
+export function SituationFeed({
+  situations,
+  isLoading,
+  searchQuery,
+  deepLinkSituationId,
+  onSituationSelect,
+}: SituationFeedProps) {
   const [selectedSituation, setSelectedSituation] = useState<SituationWithCoords | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleClick = (situation: SituationWithCoords) => {
     setSelectedSituation(situation);
     setDialogOpen(true);
+    onSituationSelect?.(situation.id);
+  };
+
+  const handleDialogChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      onSituationSelect?.(null);
+    }
   };
 
   const items = useMemo(() => {
@@ -34,6 +50,18 @@ export function SituationFeed({ situations, isLoading, searchQuery }: SituationF
         (s.countryCodes?.some((c) => c.toLowerCase().includes(q)) ?? false),
     );
   }, [situations, searchQuery]);
+
+  // Restore situation from deep link on initial data load
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current || !deepLinkSituationId || !situations) return;
+    const match = situations.find((s) => s.id === deepLinkSituationId);
+    if (match) {
+      setSelectedSituation(match);
+      setDialogOpen(true);
+      restoredRef.current = true;
+    }
+  }, [deepLinkSituationId, situations]);
 
   return (
     <div className="flex-1 min-h-0 min-w-0">
@@ -83,7 +111,7 @@ export function SituationFeed({ situations, isLoading, searchQuery }: SituationF
       <SituationDialog
         situation={selectedSituation}
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={handleDialogChange}
       />
     </div>
   );

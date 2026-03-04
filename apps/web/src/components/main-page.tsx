@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GeoJSONFeature } from "@travelrisk/db";
 import { useFilters } from "@/hooks/use-filters";
 import { useMapEvents } from "@/hooks/use-map-events";
 import { useSituations } from "@/hooks/use-situations";
 import { useEventStream } from "@/hooks/use-event-stream";
 import { useStats } from "@/hooks/use-stats";
+import { useDeepLink } from "@/hooks/use-deep-link";
 import { MapView } from "@/components/map/map-view";
 import { MapLegend } from "@/components/map/map-legend";
 import { ChoroplethToggle } from "@/components/map/choropleth-toggle";
@@ -18,6 +19,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 export function MainPage() {
   const filters = useFilters();
+  const deepLink = useDeepLink();
   const [selectedEvent, setSelectedEvent] = useState<GeoJSONFeature | null>(
     null,
   );
@@ -83,9 +85,10 @@ export function MainPage() {
       if (advisory) {
         setSelectedAdvisory({ advisory, lngLat });
         setSelectedEvent(null);
+        deepLink.clear();
       }
     },
-    [advisories],
+    [advisories, deepLink],
   );
 
   // Derive category counts from situations so they match sidebar items
@@ -105,11 +108,26 @@ export function MainPage() {
   const handleEventSelect = useCallback((feature: GeoJSONFeature) => {
     setSelectedEvent(feature);
     setSelectedAdvisory(null);
-  }, []);
+    deepLink.selectEvent(feature.properties.id);
+  }, [deepLink]);
 
   const handleDeselectEvent = useCallback(() => {
     setSelectedEvent(null);
-  }, []);
+    deepLink.selectEvent(null);
+  }, [deepLink]);
+
+  // Restore event from deep link on initial data load
+  const eventRestoredRef = useRef(false);
+  useEffect(() => {
+    if (eventRestoredRef.current || !deepLink.eventId || !data) return;
+    const feature = data.features.find(
+      (f) => f.properties.id === deepLink.eventId,
+    );
+    if (feature) {
+      setSelectedEvent(feature);
+      eventRestoredRef.current = true;
+    }
+  }, [deepLink.eventId, data]);
 
   // Combine errors for display
   const error = eventsError ?? situationsError;
@@ -130,6 +148,8 @@ export function MainPage() {
           eventsLoading={eventsLoading}
           onEventClick={handleEventSelect}
           selectedEventId={selectedEvent?.properties.id ?? null}
+          deepLinkSituationId={deepLink.situationId}
+          onSituationSelect={deepLink.selectSituation}
         />
         <div className="relative flex-1">
           <MapView
