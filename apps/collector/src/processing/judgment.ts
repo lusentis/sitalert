@@ -95,10 +95,6 @@ export class Judgment {
     candidateDuplicates: EventWithCoords[],
     activeSituations: SituationWithCoords[],
   ): Promise<JudgmentResult> {
-    if (candidateDuplicates.length === 0 && activeSituations.length === 0) {
-      return { duplicateOf: null, situationId: null, newSituation: null };
-    }
-
     try {
       const prompt = `NEW EVENT:
 Title: ${newEvent.title}

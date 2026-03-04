@@ -239,8 +239,7 @@ export class Pipeline {
         console.log(`[pipeline] Duplicate merged into ${existing.id}`);
         return { event, lat: existing.lat, lng: existing.lng };
       }
-      // LLM hallucinated an ID — fall through to standalone insert
-      console.warn(`[pipeline] Judgment returned unknown duplicateOf="${judgment.duplicateOf}", inserting as new`);
+      console.warn(`[pipeline] Judgment returned unknown duplicateOf="${judgment.duplicateOf}", will auto-create situation`);
     }
 
     // Handle existing situation assignment
@@ -257,7 +256,7 @@ export class Pipeline {
         console.log(`[pipeline] Assigned to situation ${matchedSituation.id}`);
         return { event, lat, lng };
       }
-      console.warn(`[pipeline] Judgment returned unknown situationId="${judgment.situationId}", inserting as new`);
+      console.warn(`[pipeline] Judgment returned unknown situationId="${judgment.situationId}", will auto-create situation`);
     }
 
     // Handle new situation creation
@@ -281,12 +280,23 @@ export class Pipeline {
       return { event, lat, lng };
     }
 
-    // Standalone event — no dedup, no situation
+    // Fallback: LLM returned all-null or hallucinated IDs — auto-create situation
+    const fallbackSituation = await createSituation(this.db, {
+      title,
+      summary,
+      category,
+      severity,
+      countryCode,
+      lat,
+      lng,
+    });
     const event = await insertEvent(this.db, {
       title, summary, category, severity, confidence,
       location: "", lat, lng, locationName,
       countryCode, timestamp, sources, media, rawText,
+      situationId: fallbackSituation.id,
     });
+    console.log(`[pipeline] Auto-created situation ${fallbackSituation.id} for event ${event.id}`);
     return { event, lat, lng };
   }
 
