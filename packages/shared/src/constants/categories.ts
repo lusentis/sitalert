@@ -1,4 +1,4 @@
-import type { EventCategory } from "../types/category.js";
+import type { EventCategory } from "../types/category";
 
 export interface CategoryMetadata {
   label: string;

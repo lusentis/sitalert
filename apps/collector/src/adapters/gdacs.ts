@@ -1,5 +1,5 @@
 import Parser from "rss-parser";
-import { BaseAdapter } from "./base.js";
+import { BaseAdapter } from "./base";
 import type { Platform, RawEvent, EventCategory } from "@travelrisk/shared";
 
 type GdacsCustomItem = {

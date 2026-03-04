@@ -1,3 +1,3 @@
-export { haversineDistance, isWithinBBox } from "./geo.js";
-export { formatRelativeTime, ageInMinutes, timeRangeToDate } from "./time.js";
-export { isEventCategory } from "./category.js";
+export { haversineDistance, isWithinBBox } from "./geo";
+export { formatRelativeTime, ageInMinutes, timeRangeToDate } from "./time";
+export { isEventCategory } from "./category";

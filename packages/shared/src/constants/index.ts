@@ -2,13 +2,13 @@ export {
   CATEGORY_METADATA,
   CATEGORY_COLORS,
   type CategoryMetadata,
-} from "./categories.js";
+} from "./categories";
 
 export {
   SEVERITY_LEVELS,
   MIN_SEVERITY,
   MAX_SEVERITY,
   type SeverityLevel,
-} from "./severity.js";
+} from "./severity";
 
-export { PLATFORM_COLORS } from "./platforms.js";
+export { PLATFORM_COLORS } from "./platforms";

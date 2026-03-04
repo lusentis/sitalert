@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { EventCategory } from "./category.js";
-import { Platform } from "./source.js";
+import { EventCategory } from "./category";
+import { Platform } from "./source";
 
 export const EventSourceSchema = z.object({
   platform: Platform,

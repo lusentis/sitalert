@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { formatRelativeTime, ageInMinutes, timeRangeToDate } from "../time.js";
+import { formatRelativeTime, ageInMinutes, timeRangeToDate } from "../time";
 
 describe("formatRelativeTime", () => {
   afterEach(() => {

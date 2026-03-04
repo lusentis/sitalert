@@ -1,6 +1,6 @@
 import { sql, desc, and, gte, lte, inArray, isNull, or } from "drizzle-orm";
-import { events, type Event, type NewEvent } from "../schema.js";
-import type { HttpClient, PoolClient } from "../client.js";
+import { events, type Event, type NewEvent } from "../schema";
+import type { HttpClient, PoolClient } from "../client";
 import type { EventCategory } from "@travelrisk/shared";
 
 type DbClient = HttpClient | PoolClient;

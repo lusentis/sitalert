@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { jaccardSimilarity, Deduplicator } from "../deduplicator.js";
+import { jaccardSimilarity, Deduplicator } from "../deduplicator";
 
 describe("jaccardSimilarity", () => {
   it("should return 1 for identical strings", () => {

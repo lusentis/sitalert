@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { haversineDistance, isWithinBBox } from "../geo.js";
+import { haversineDistance, isWithinBBox } from "../geo";
 
 describe("haversineDistance", () => {
   it("returns 0 for identical points", () => {

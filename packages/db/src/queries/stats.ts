@@ -1,6 +1,6 @@
 import { sql, gte, and, or, isNull } from "drizzle-orm";
-import { events } from "../schema.js";
-import type { HttpClient, PoolClient } from "../client.js";
+import { events } from "../schema";
+import type { HttpClient, PoolClient } from "../client";
 
 type DbClient = HttpClient | PoolClient;
 

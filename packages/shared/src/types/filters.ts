@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { EventCategory } from "./category.js";
+import { EventCategory } from "./category";
 
 export const TimeRange = z.enum(["1h", "6h", "24h", "7d", "30d"]);
 export type TimeRange = z.infer<typeof TimeRange>;

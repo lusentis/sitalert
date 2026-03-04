@@ -1,9 +1,9 @@
 export {
   EventCategory,
   EVENT_CATEGORIES,
-} from "./category.js";
+} from "./category";
 
-export { Platform } from "./source.js";
+export { Platform } from "./source";
 
 export {
   NormalizedEventSchema,
@@ -14,14 +14,14 @@ export {
   type NormalizedEventGeoJSONFeature,
   type EventSource,
   type MediaItem,
-} from "./event.js";
+} from "./event";
 
 export {
   RawEventSchema,
   type RawEvent,
   type EventCallback,
   type SourceAdapter,
-} from "./raw-event.js";
+} from "./raw-event";
 
 export {
   EventsQuerySchema,
@@ -29,4 +29,4 @@ export {
   TimeRange,
   type EventsQuery,
   type StreamQuery,
-} from "./filters.js";
+} from "./filters";

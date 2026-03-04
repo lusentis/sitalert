@@ -6,26 +6,26 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 
-import { Pipeline } from "./pipeline.js";
-import { Classifier } from "./processing/classifier.js";
-import { Geocoder } from "./processing/geocoder.js";
-import { Deduplicator } from "./processing/deduplicator.js";
+import { Pipeline } from "./pipeline";
+import { Classifier } from "./processing/classifier";
+import { Geocoder } from "./processing/geocoder";
+import { Deduplicator } from "./processing/deduplicator";
 
-import { UsgsAdapter } from "./adapters/usgs.js";
-import { EmscAdapter } from "./adapters/emsc.js";
-import { GdacsAdapter } from "./adapters/gdacs.js";
-import { NasaFirmsAdapter } from "./adapters/nasa-firms.js";
-import { ReliefWebAdapter } from "./adapters/reliefweb.js";
-import { GeoNetNzAdapter } from "./adapters/geonet-nz.js";
-import { UsgsVolcanoesAdapter } from "./adapters/usgs-volcanoes.js";
-import { WhoOutbreaksAdapter } from "./adapters/who-outbreaks.js";
-import { NoaaNhcAdapter } from "./adapters/noaa-nhc.js";
-import { SmithsonianGvpAdapter } from "./adapters/smithsonian-gvp.js";
-import { RssAdapter } from "./adapters/rss.js";
-import { UsTravelAdvisoriesAdapter } from "./adapters/us-travel-advisories.js";
-import { ViaggiareSicuriAdapter } from "./adapters/viaggiaresicuri.js";
-import { TelegramAdapter } from "./adapters/telegram.js";
-import type { BaseAdapter } from "./adapters/base.js";
+import { UsgsAdapter } from "./adapters/usgs";
+import { EmscAdapter } from "./adapters/emsc";
+import { GdacsAdapter } from "./adapters/gdacs";
+import { NasaFirmsAdapter } from "./adapters/nasa-firms";
+import { ReliefWebAdapter } from "./adapters/reliefweb";
+import { GeoNetNzAdapter } from "./adapters/geonet-nz";
+import { UsgsVolcanoesAdapter } from "./adapters/usgs-volcanoes";
+import { WhoOutbreaksAdapter } from "./adapters/who-outbreaks";
+import { NoaaNhcAdapter } from "./adapters/noaa-nhc";
+import { SmithsonianGvpAdapter } from "./adapters/smithsonian-gvp";
+import { RssAdapter } from "./adapters/rss";
+import { UsTravelAdvisoriesAdapter } from "./adapters/us-travel-advisories";
+import { ViaggiareSicuriAdapter } from "./adapters/viaggiaresicuri";
+import { TelegramAdapter } from "./adapters/telegram";
+import type { BaseAdapter } from "./adapters/base";
 
 // Schema for sources.json config
 const SourceConfigSchema = z.object({

@@ -1,6 +1,13 @@
 import type Redis from "ioredis";
-import type { PoolClient } from "@travelrisk/db";
-import { insertEvent, upsertEvent } from "@travelrisk/db";
+import type { PoolClient, EventWithCoords } from "@travelrisk/db";
+import {
+  insertEvent,
+  upsertEvent,
+  findNearbyEvents,
+  findActiveSituations,
+  createSituation,
+  updateSituation,
+} from "@travelrisk/db";
 import type {
   RawEvent,
   NormalizedEvent,
@@ -8,10 +15,11 @@ import type {
   EventCategory,
   MediaItem,
 } from "@travelrisk/shared";
-import { Classifier } from "./processing/classifier.js";
-import { Geocoder } from "./processing/geocoder.js";
-import { Deduplicator } from "./processing/deduplicator.js";
-import { Publisher } from "./publisher.js";
+import { Classifier } from "./processing/classifier";
+import { Geocoder } from "./processing/geocoder";
+import { Deduplicator } from "./processing/deduplicator";
+import { Judgment } from "./processing/judgment";
+import { Publisher } from "./publisher";
 
 function isStructuredEvent(raw: RawEvent): boolean {
   return !!(raw.location && raw.category && raw.title);
@@ -22,6 +30,7 @@ export class Pipeline {
   private classifier: Classifier;
   private geocoder: Geocoder;
   private deduplicator: Deduplicator;
+  private judgment: Judgment;
   private publisher: Publisher;
 
   constructor(
@@ -35,6 +44,7 @@ export class Pipeline {
     this.classifier = classifier;
     this.geocoder = geocoder;
     this.deduplicator = deduplicator;
+    this.judgment = new Judgment();
     this.publisher = new Publisher(redis);
   }
 

@@ -5,12 +5,12 @@ export {
   situations,
   type Situation,
   type NewSituation,
-} from "./schema.js";
-export { geographyPoint } from "./custom-types.js";
+} from "./schema";
+export { geographyPoint } from "./custom-types";
 export {
   createHttpClient,
   createPoolClient,
   type HttpClient,
   type PoolClient,
-} from "./client.js";
-export * from "./queries/index.js";
+} from "./client";
+export * from "./queries/index";

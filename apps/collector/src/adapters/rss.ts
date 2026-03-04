@@ -1,5 +1,5 @@
 import Parser from "rss-parser";
-import { BaseAdapter } from "./base.js";
+import { BaseAdapter } from "./base";
 import type { Platform, RawEvent } from "@travelrisk/shared";
 
 interface FeedConfig {

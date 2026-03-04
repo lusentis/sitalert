@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BaseAdapter } from "./base.js";
+import { BaseAdapter } from "./base";
 import type { Platform, RawEvent } from "@travelrisk/shared";
 
 const WhoOutbreakSchema = z.object({

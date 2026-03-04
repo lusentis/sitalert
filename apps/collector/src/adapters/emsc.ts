@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { BaseAdapter } from "./base.js";
+import { BaseAdapter } from "./base";
 import type { Platform, RawEvent } from "@travelrisk/shared";
-import { magnitudeToSeverity } from "./usgs.js";
+import { magnitudeToSeverity } from "./usgs";
 
 const EmscEventSchema = z.object({
   unid: z.string(),
