@@ -4,17 +4,17 @@ import { useState } from "react";
 import type { SituationWithCoords } from "@travelrisk/db";
 import type { GeoJSONFeatureCollection, GeoJSONFeature } from "@travelrisk/db";
 import type { NormalizedEvent } from "@travelrisk/shared";
-import type { EventStats } from "@travelrisk/db";
+import { formatRelativeTime } from "@travelrisk/shared";
 import type { Filters } from "@/hooks/use-filters";
 import { CategoryFilter } from "./category-filter";
 import { SeverityFilter } from "./severity-filter";
 import { SituationFeed } from "./situation-feed";
 import { EventFeed } from "./event-feed";
 import { WelcomeBanner } from "./welcome-banner";
-import { StatsBar } from "./stats-bar";
 import { SearchInput } from "./search-input";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Drawer } from "vaul";
 import { Activity, ChevronRight, AlertCircle } from "lucide-react";
 import { useOnboardingDismissed } from "@/hooks/use-onboarding";
@@ -25,7 +25,6 @@ interface SidebarContentProps {
   isLoading: boolean;
   isConnected: boolean;
   counts?: Record<string, number>;
-  stats: EventStats | null;
   error: string | null;
   events: GeoJSONFeatureCollection | null;
   lastStreamEvent: NormalizedEvent | null;
@@ -44,7 +43,6 @@ function SidebarContent({
   isLoading,
   isConnected,
   counts,
-  stats,
   error,
   events,
   lastStreamEvent,
@@ -64,15 +62,22 @@ function SidebarContent({
         <Activity className="h-5 w-5 text-primary" />
         <h1 className="text-lg font-bold font-mono tracking-tight">TravelRisk</h1>
         {isConnected && (
-          <div className="flex items-center gap-1.5 ml-auto">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 motion-safe:animate-pulse" />
-            <span className="text-[10px] font-medium text-emerald-400/80 uppercase tracking-wider">Live</span>
-            <span className="sr-only">Live connection active</span>
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1.5 ml-auto cursor-default">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 motion-safe:animate-pulse" />
+                <span className="text-[10px] font-medium text-emerald-400/80 uppercase tracking-wider">Live</span>
+                <span className="sr-only">Live connection active</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {lastStreamEvent
+                ? `Last event: ${formatRelativeTime(lastStreamEvent.timestamp)}`
+                : "Connected, waiting for events"}
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
-
-      <StatsBar stats={stats} />
 
       <Separator />
 
@@ -90,7 +95,7 @@ function SidebarContent({
       <CategoryFilter
         selected={filters.categories}
         onToggle={filters.toggleCategory}
-        onSetAll={() => filters.setCategories([] as string[])}
+        onSetCategories={filters.setCategories}
         counts={counts}
       />
       <Collapsible>

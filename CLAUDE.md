@@ -53,6 +53,10 @@ See `.env.example` for all variables. Key services:
 - `REDIS_URL` — Upstash Redis TCP (collector pub/sub)
 - `OPENAI_API_KEY` — OpenAI for LLM classification (collector)
 
+## Ideas & Improvements
+
+See `IDEAS.md` for the backlog of feature ideas and improvements. When asked how to improve the app, reference and update that file.
+
 ## Package Relationships
 
 ```

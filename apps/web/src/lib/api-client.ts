@@ -1,5 +1,4 @@
 import type { GeoJSONFeatureCollection, SituationWithCoords } from "@travelrisk/db";
-import type { EventStats } from "@travelrisk/db";
 
 export interface FetchEventsParams {
   bbox?: { west: number; south: number; east: number; north: number };
@@ -48,16 +47,6 @@ export async function fetchEventsGeoJSON(
   }
 
   return response.json() as Promise<GeoJSONFeatureCollection>;
-}
-
-export async function fetchStats(): Promise<EventStats> {
-  const response = await fetch("/api/stats");
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch stats: ${response.status}`);
-  }
-
-  return response.json() as Promise<EventStats>;
 }
 
 export interface FetchSituationsParams {

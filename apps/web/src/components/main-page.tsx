@@ -6,7 +6,6 @@ import { useFilters } from "@/hooks/use-filters";
 import { useMapEvents } from "@/hooks/use-map-events";
 import { useSituations } from "@/hooks/use-situations";
 import { useEventStream } from "@/hooks/use-event-stream";
-import { useStats } from "@/hooks/use-stats";
 import { useDeepLink } from "@/hooks/use-deep-link";
 import { MapView } from "@/components/map/map-view";
 import { MapLegend } from "@/components/map/map-legend";
@@ -37,7 +36,6 @@ export function MainPage() {
   });
 
   const { lastEvent, isConnected } = useEventStream();
-  const { data: stats, refetch: refetchStats } = useStats();
 
   const [advisories, setAdvisories] = useState<AdvisoryData[]>([]);
   const [selectedAdvisory, setSelectedAdvisory] = useState<{
@@ -62,9 +60,8 @@ export function MainPage() {
     if (lastEvent) {
       refetch();
       refetchSituations();
-      refetchStats();
     }
-  }, [lastEvent, refetch, refetchSituations, refetchStats]);
+  }, [lastEvent, refetch, refetchSituations]);
 
   const [choroplethVisible, setChoroplethVisible] = useState(true);
 
@@ -141,7 +138,6 @@ export function MainPage() {
           isLoading={situationsLoading}
           isConnected={isConnected}
           counts={categoryCounts}
-          stats={stats}
           error={error}
           events={data}
           lastStreamEvent={lastEvent}
