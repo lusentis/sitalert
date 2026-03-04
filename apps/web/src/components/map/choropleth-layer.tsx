@@ -15,6 +15,7 @@ interface ChoroplethLayerProps {
   /** Map of uppercase country code -> total severity score */
   countryScores: Map<string, number>;
   visible: boolean;
+  onCountryClick?: (countryCode: string, lngLat: { lng: number; lat: number }) => void;
 }
 
 function buildFillColorExpression(
@@ -32,9 +33,13 @@ function buildFillColorExpression(
   return matchExpr as maplibregl.ExpressionSpecification;
 }
 
-export function ChoroplethLayer({ countryScores, visible }: ChoroplethLayerProps) {
+export function ChoroplethLayer({ countryScores, visible, onCountryClick }: ChoroplethLayerProps) {
   const { map, isLoaded } = useMap();
   const layersAddedRef = useRef(false);
+  const onCountryClickRef = useRef(onCountryClick);
+  onCountryClickRef.current = onCountryClick;
+  const scoresRef = useRef(countryScores);
+  scoresRef.current = countryScores;
 
   // Add source + layers once
   useEffect(() => {
@@ -81,6 +86,21 @@ export function ChoroplethLayer({ countryScores, visible }: ChoroplethLayerProps
     );
 
     layersAddedRef.current = true;
+
+    map.on("click", FILL_LAYER, (e: maplibregl.MapLayerMouseEvent) => {
+      if (!onCountryClickRef.current || !e.features?.[0]) return;
+      const code = e.features[0].properties?.[ISO_PROPERTY];
+      if (code && scoresRef.current.has(code)) {
+        onCountryClickRef.current(code, e.lngLat);
+      }
+    });
+
+    map.on("mouseenter", FILL_LAYER, () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", FILL_LAYER, () => {
+      map.getCanvas().style.cursor = "";
+    });
 
     return () => {
       if (layersAddedRef.current) {

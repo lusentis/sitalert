@@ -17,6 +17,8 @@ interface MapViewProps {
   onDeselectEvent?: () => void;
   choroplethScores?: Map<string, number>;
   choroplethVisible?: boolean;
+  onCountryClick?: (countryCode: string, lngLat: { lng: number; lat: number }) => void;
+  advisoryPopup?: React.ReactNode;
 }
 
 /** Inner component that fires initial bounds via useMap() */
@@ -52,6 +54,8 @@ export function MapView({
   onDeselectEvent,
   choroplethScores,
   choroplethVisible,
+  onCountryClick,
+  advisoryPopup,
 }: MapViewProps) {
   const mapRef = useRef<MapRef>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -113,12 +117,14 @@ export function MapView({
           <ChoroplethLayer
             countryScores={choroplethScores}
             visible={choroplethVisible ?? false}
+            onCountryClick={onCountryClick}
           />
         )}
         <EventLayer data={data} onEventClick={handleEventClick} />
         {selectedEvent && onDeselectEvent && (
           <EventPopup feature={selectedEvent} onClose={onDeselectEvent} />
         )}
+        {advisoryPopup}
       </Map>
     </div>
   );

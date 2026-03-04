@@ -9,6 +9,7 @@ import { useEventStream } from "@/hooks/use-event-stream";
 import { MapView } from "@/components/map/map-view";
 import { MapLegend } from "@/components/map/map-legend";
 import { ChoroplethToggle } from "@/components/map/choropleth-toggle";
+import { AdvisoryPopup } from "@/components/map/advisory-popup";
 import { buildAdvisoryScores } from "@/lib/compute-country-risk";
 import { fetchAdvisories, type AdvisoryData } from "@/lib/api-client";
 import { Sidebar } from "@/components/sidebar/sidebar";
@@ -36,6 +37,10 @@ export function MainPage() {
   const { lastEvent, isConnected } = useEventStream();
 
   const [advisories, setAdvisories] = useState<AdvisoryData[]>([]);
+  const [selectedAdvisory, setSelectedAdvisory] = useState<{
+    advisory: AdvisoryData;
+    lngLat: { lng: number; lat: number };
+  } | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -67,6 +72,18 @@ export function MainPage() {
   const handleChoroplethToggle = useCallback(() => {
     setChoroplethVisible((prev) => !prev);
   }, []);
+
+  const handleCountryClick = useCallback(
+    (countryCode: string, lngLat: { lng: number; lat: number }) => {
+      const advisory = advisories.find(
+        (a) => a.countryCode.toUpperCase() === countryCode,
+      );
+      if (advisory) {
+        setSelectedAdvisory({ advisory, lngLat });
+      }
+    },
+    [advisories],
+  );
 
   // Derive category counts from situations so they match sidebar items
   const categoryCounts = useMemo(() => {
@@ -109,6 +126,16 @@ export function MainPage() {
             onDeselectEvent={handleDeselectEvent}
             choroplethScores={countryScores}
             choroplethVisible={choroplethVisible}
+            onCountryClick={choroplethVisible ? handleCountryClick : undefined}
+            advisoryPopup={
+              selectedAdvisory && choroplethVisible ? (
+                <AdvisoryPopup
+                  advisory={selectedAdvisory.advisory}
+                  lngLat={selectedAdvisory.lngLat}
+                  onClose={() => setSelectedAdvisory(null)}
+                />
+              ) : null
+            }
           />
           <TimelineBar
             value={filters.timeRange}
