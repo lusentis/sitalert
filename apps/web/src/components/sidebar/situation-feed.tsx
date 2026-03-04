@@ -79,7 +79,7 @@ export function SituationFeed({
         )}
       </div>
       <ScrollArea className="flex-1 min-h-0">
-        <div role="feed" aria-busy={isLoading} className="space-y-1.5 pr-2">
+        <div role="feed" aria-busy={isLoading} className="space-y-1.5 p-0.5 pr-2">
           {items.length === 0 && !isLoading && (
             <div className="text-center py-10 space-y-3">
               <div className="relative size-10 mx-auto opacity-40">

@@ -75,7 +75,7 @@ export class GdacsAdapter extends BaseAdapter {
     this.parser = new Parser({
       requestOptions: {
         headers: {
-          "User-Agent": "travelrisk/1.0 (https://travelrisk.io)",
+          "User-Agent": "Mozilla/5.0 (compatible; news-aggregator/1.0)",
         },
       },
       customFields: {

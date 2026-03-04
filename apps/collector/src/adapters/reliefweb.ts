@@ -40,7 +40,7 @@ export class ReliefWebAdapter extends BaseAdapter {
     this.parser = new Parser({
       requestOptions: {
         headers: {
-          "User-Agent": "travelrisk/1.0 (https://travelrisk.io)",
+          "User-Agent": "Mozilla/5.0 (compatible; news-aggregator/1.0)",
         },
       },
     });
@@ -49,7 +49,7 @@ export class ReliefWebAdapter extends BaseAdapter {
   protected async poll(): Promise<void> {
     // Fetch manually to control headers and avoid rss-parser's HTTP client issues
     const response = await fetch(ReliefWebAdapter.FEED_URL, {
-      headers: { "User-Agent": "travelrisk/1.0 (https://travelrisk.io)" },
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; news-aggregator/1.0)" },
     });
     if (!response.ok) {
       throw new Error(`ReliefWeb RSS returned ${response.status}`);

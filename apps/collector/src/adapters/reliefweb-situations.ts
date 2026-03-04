@@ -239,7 +239,7 @@ export async function syncReliefWebSituations(
   const parser = new Parser<Record<string, unknown>, ReliefWebDisasterItem>({
     requestOptions: {
       headers: {
-        "User-Agent": "travelrisk/1.0 (https://travelrisk.io)",
+        "User-Agent": "Mozilla/5.0 (compatible; news-aggregator/1.0)",
       },
     },
   });
@@ -249,7 +249,7 @@ export async function syncReliefWebSituations(
   const tFetch = performance.now();
   const response = await fetch(FEED_URL, {
     headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; travelrisk/1.0; +https://travelrisk.io)",
+      "User-Agent": "Mozilla/5.0 (compatible; news-aggregator/1.0)",
       "Accept": "application/rss+xml, application/xml, text/xml, */*",
     },
   });

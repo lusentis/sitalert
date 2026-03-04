@@ -38,7 +38,7 @@ export class WhoOutbreaksAdapter extends BaseAdapter {
     const response = await fetch(WhoOutbreaksAdapter.FEED_URL, {
       headers: {
         Accept: "application/json",
-        "User-Agent": "travelrisk/1.0",
+        "User-Agent": "Mozilla/5.0 (compatible; news-aggregator/1.0)",
       },
     });
     if (!response.ok) {

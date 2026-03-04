@@ -142,7 +142,7 @@ export class Geocoder {
       const url = `${this.nominatimUrl}/reverse?lat=${lat}&lon=${lng}&format=json&zoom=5`;
       const response = await fetch(url, {
         headers: {
-          "User-Agent": "TravelRisk/1.0 (https://travelrisk.io)",
+          "User-Agent": "Mozilla/5.0 (compatible; news-aggregator/1.0)",
         },
       });
 
@@ -176,7 +176,7 @@ export class Geocoder {
       const url = `${this.nominatimUrl}/search?q=${encodeURIComponent(location)}&format=json&limit=1`;
       const response = await fetch(url, {
         headers: {
-          "User-Agent": "TravelRisk/1.0 (https://travelrisk.io)",
+          "User-Agent": "Mozilla/5.0 (compatible; news-aggregator/1.0)",
         },
       });
 

@@ -236,7 +236,7 @@ export async function syncWikipediaConflicts(
     const tRevCheck = performance.now();
     try {
       const resp = await fetch(WIKI_REVID_URL, {
-        headers: { "User-Agent": "TravelRisk/1.0 (https://travelrisk.io)" },
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; news-aggregator/1.0)" },
       });
       if (resp.ok) {
         const json: unknown = await resp.json();
@@ -260,7 +260,7 @@ export async function syncWikipediaConflicts(
   const tFetch = performance.now();
   const response = await fetch(WIKI_API_URL, {
     headers: {
-      "User-Agent": "TravelRisk/1.0 (https://travelrisk.io)",
+      "User-Agent": "Mozilla/5.0 (compatible; news-aggregator/1.0)",
     },
   });
 

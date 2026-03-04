@@ -28,7 +28,7 @@ export class SmithsonianGvpAdapter extends BaseAdapter {
     this.parser = new Parser({
       requestOptions: {
         headers: {
-          "User-Agent": "travelrisk/1.0 (https://travelrisk.io)",
+          "User-Agent": "Mozilla/5.0 (compatible; news-aggregator/1.0)",
         },
       },
       customFields: {
@@ -40,7 +40,7 @@ export class SmithsonianGvpAdapter extends BaseAdapter {
   protected async poll(): Promise<void> {
     const response = await fetch(SmithsonianGvpAdapter.FEED_URL, {
       headers: {
-        "User-Agent": "travelrisk/1.0 (https://travelrisk.io)",
+        "User-Agent": "Mozilla/5.0 (compatible; news-aggregator/1.0)",
       },
     });
     if (!response.ok) {
