@@ -17,5 +17,13 @@ export {
   createSituation,
   updateSituation,
   resolveExpiredSituations,
+  querySituationsForFeed,
+  queryEventsBySituation,
   type SituationWithCoords,
+  type SituationFeedQuery,
 } from "./situations";
+
+export {
+  upsertAdvisory,
+  queryAllAdvisories,
+} from "./advisories";

@@ -92,3 +92,18 @@ export const situations = pgTable(
 
 export type Situation = typeof situations.$inferSelect;
 export type NewSituation = typeof situations.$inferInsert;
+
+export const advisories = pgTable("advisories", {
+  countryCode: text("country_code").primaryKey(),
+  level: integer("level").notNull(),
+  title: text("title").notNull(),
+  summary: text("summary").notNull(),
+  sourceUrl: text("source_url").notNull(),
+  sourceName: text("source_name").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export type Advisory = typeof advisories.$inferSelect;
+export type NewAdvisory = typeof advisories.$inferInsert;
