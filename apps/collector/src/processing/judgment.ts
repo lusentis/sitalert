@@ -38,20 +38,22 @@ Given a new event and lists of candidate duplicates and active situations, decid
    - Aftershocks, follow-up developments, escalations = NOT duplicates (they are new events).
    - Different incidents in the same region = NOT duplicates.
 
-2. **Situation assignment**: Does this event belong to an ongoing situation? If so, set situationId.
-   - Group events that are part of the same ongoing crisis, conflict, disaster zone, or regional security concern.
-   - Be BROAD in grouping: events in the same country about the same type of crisis belong together.
+2. **Situation assignment** (STRONGLY PREFERRED): Does this event belong to an ongoing situation? If so, set situationId.
+   - ALWAYS prefer assigning to an existing situation over creating a new one.
+   - Group broadly: same country + same category = same situation (e.g., all forest fires in CAR = one situation).
+   - Don't be picky about exact title matching — "Sudan Forest Fires" and "Forest fire in Sudan" are the SAME situation.
+   - If in doubt, assign to the existing situation rather than creating a new one.
 
-3. **New situation**: If no existing situation matches, create a new one. EVERY event must belong to a situation.
-   - Use a clear, descriptive title for the situation (e.g., "Ukraine Conflict", "East Africa Drought", "Myanmar Civil War").
-   - Situations represent ongoing regional concerns, not individual incidents.
+3. **New situation** (LAST RESORT): Only create a new situation if NO existing situation covers this event's country and category.
+   - Use short, generic titles: "[Country] [Category]" (e.g., "Sudan Forest Fires", "Ukraine Conflict", "Haiti Civil Unrest").
+   - Do NOT include dates, specifics, or qualifiers in situation titles.
 
 RULES:
 - EVERY event MUST result in exactly one action: duplicate, assign to situation, or create new situation.
 - duplicateOf, situationId, and newSituation are MUTUALLY EXCLUSIVE — set exactly ONE.
 - If the event is a duplicate, set ONLY duplicateOf.
 - If assigning to an existing situation, set ONLY situationId.
-- If no situation matches, set ONLY newSituation. Never leave all fields null.`;
+- ONLY create a new situation if no existing situation matches. Never leave all fields null.`;
 
 const openai = createOpenAI();
 // const groq = createGroq();
