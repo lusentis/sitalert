@@ -244,7 +244,7 @@ export class Pipeline {
   }
 
   private async publishNormalized(
-    event: { id: string; title: string; summary: string; category: string; severity: number; confidence: number; locationName: string; countryCode: string | null; timestamp: Date; sources: unknown; media: unknown; rawText: string | null; clusterId: string | null; expiresAt: Date | null; createdAt: Date; updatedAt: Date },
+    event: { id: string; title: string; summary: string; category: string; severity: number; confidence: number; locationName: string; countryCode: string | null; timestamp: Date; sources: unknown; media: unknown; rawText: string | null; situationId: string | null; expiresAt: Date | null; createdAt: Date; updatedAt: Date },
     lat: number,
     lng: number,
   ): Promise<void> {
@@ -262,7 +262,7 @@ export class Pipeline {
       sources: (event.sources as EventSource[]) ?? [],
       media: (event.media as MediaItem[]) ?? [],
       rawText: event.rawText ?? undefined,
-      clusterId: event.clusterId ?? undefined,
+      situationId: event.situationId ?? undefined,
       expiresAt: event.expiresAt?.toISOString(),
       createdAt: event.createdAt.toISOString(),
       updatedAt: event.updatedAt.toISOString(),

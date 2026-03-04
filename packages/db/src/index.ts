@@ -1,4 +1,11 @@
-export { events, type Event, type NewEvent } from "./schema.js";
+export {
+  events,
+  type Event,
+  type NewEvent,
+  situations,
+  type Situation,
+  type NewSituation,
+} from "./schema.js";
 export { geographyPoint } from "./custom-types.js";
 export {
   createHttpClient,

@@ -31,7 +31,7 @@ export const events = pgTable(
     sources: jsonb("sources").$type<EventSource[]>().notNull().default([]),
     media: jsonb("media").$type<MediaItem[]>().notNull().default([]),
     rawText: text("raw_text"),
-    clusterId: uuid("cluster_id"),
+    situationId: uuid("situation_id"),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -53,3 +53,42 @@ export const events = pgTable(
 
 export type Event = typeof events.$inferSelect;
 export type NewEvent = typeof events.$inferInsert;
+
+export const situations = pgTable(
+  "situations",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    title: text("title").notNull(),
+    summary: text("summary").notNull(),
+    category: text("category").$type<EventCategory>().notNull(),
+    severity: integer("severity").notNull(),
+    countryCode: text("country_code"),
+    location: geographyPoint("location").notNull(),
+    radiusKm: integer("radius_km").notNull().default(50),
+    eventCount: integer("event_count").notNull().default(1),
+    firstSeen: timestamp("first_seen", { withTimezone: true }).notNull(),
+    lastUpdated: timestamp("last_updated", { withTimezone: true }).notNull(),
+    status: text("status")
+      .$type<"active" | "resolved">()
+      .notNull()
+      .default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("situations_category_status_idx").on(table.category, table.status),
+    index("situations_status_last_updated_idx").on(
+      table.status,
+      table.lastUpdated,
+    ),
+  ],
+);
+
+export type Situation = typeof situations.$inferSelect;
+export type NewSituation = typeof situations.$inferInsert;

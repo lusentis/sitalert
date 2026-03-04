@@ -36,7 +36,7 @@ export const NormalizedEventSchema = z.object({
   sources: z.array(EventSourceSchema),
   media: z.array(MediaItemSchema).default([]),
   rawText: z.string().optional(),
-  clusterId: z.string().uuid().optional(),
+  situationId: z.string().uuid().optional(),
   expiresAt: z.string().datetime().optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
