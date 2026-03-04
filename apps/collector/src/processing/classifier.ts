@@ -1,5 +1,6 @@
 import { generateObject } from "ai";
-import { createGroq } from "@ai-sdk/groq";
+import { createOpenAI } from "@ai-sdk/openai";
+// import { createGroq } from "@ai-sdk/groq";
 import { z } from "zod";
 import { EVENT_CATEGORIES } from "@travelrisk/shared";
 import { withRetry } from "./retry";
@@ -47,12 +48,14 @@ Be conservative with severity — only use 4-5 for events with major impact.
 Ignore opinion pieces, scheduled events, advertisements, and general news.
 Focus on actionable situational awareness information.`;
 
-const groq = createGroq();
+const openai = createOpenAI();
+// const groq = createGroq();
 
 export class Classifier {
   private model: string;
 
-  constructor(model = "llama-3.1-8b-instant") {
+  constructor(model = "gpt-5-nano") {
+    // constructor(model = "llama-3.1-8b-instant") {
     this.model = model;
   }
 
@@ -60,7 +63,8 @@ export class Classifier {
     try {
       const { object } = await withRetry(() =>
         generateObject({
-          model: groq(this.model),
+          model: openai(this.model),
+          // model: groq(this.model),
           schema: classificationSchema,
           system: SYSTEM_PROMPT,
           prompt: `Analyze this text and classify it:\n\n${rawText.slice(0, 2000)}`,

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch --env-file=.env src/index.ts",
     "build": "tsup",
     "start": "node dist/index.js",
     "start:prod": "node dist/index.js",
@@ -15,7 +15,7 @@
     "telegram:session": "tsx scripts/generate-telegram-session.ts"
   },
   "dependencies": {
-    "@ai-sdk/groq": "^1.1.0",
+    "@ai-sdk/openai": "^1.3.0",
     "@neondatabase/serverless": "^0.10.0",
     "@travelrisk/db": "workspace:*",
     "@travelrisk/shared": "workspace:*",

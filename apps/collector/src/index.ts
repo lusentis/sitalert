@@ -66,12 +66,12 @@ async function main(): Promise<void> {
 
   // Load config
   const __dirname = dirname(fileURLToPath(import.meta.url));
-  const configPath = resolve(__dirname, "../../config/sources.json");
+  const configPath = resolve(__dirname, "../../../config/sources.json");
   let rawConfig: unknown;
   try {
     rawConfig = JSON.parse(readFileSync(configPath, "utf-8"));
   } catch {
-    // Fallback: try relative to project root in production
+    // Fallback: production Docker layout (/app/dist → /app/config)
     const altPath = resolve(__dirname, "../config/sources.json");
     rawConfig = JSON.parse(readFileSync(altPath, "utf-8"));
   }

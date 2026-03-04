@@ -1,5 +1,6 @@
 import { generateObject } from "ai";
-import { createGroq } from "@ai-sdk/groq";
+import { createOpenAI } from "@ai-sdk/openai";
+// import { createGroq } from "@ai-sdk/groq";
 import { z } from "zod";
 import type { EventWithCoords, SituationWithCoords } from "@travelrisk/db";
 import { withRetry } from "./retry";
@@ -30,26 +31,30 @@ export const judgmentSchema = z.object({
 export type JudgmentResult = z.infer<typeof judgmentSchema>;
 
 const SYSTEM_PROMPT = `You are a judgment module for a global event monitoring system (TravelRisk).
-Given a new event and lists of candidate duplicates and active situations, make three decisions:
+Given a new event and lists of candidate duplicates and active situations, decide ONE of three actions:
 
 1. **Duplicate detection**: Is this new event reporting the SAME real-world incident as an existing event, just from a different source? If so, set duplicateOf to that event's ID.
    - Same earthquake, same attack, same storm = duplicate.
    - Aftershocks, follow-up developments, escalations = NOT duplicates (they are new events).
    - Different incidents in the same region = NOT duplicates.
 
-2. **Situation assignment**: Does this event belong to an ongoing situation (crisis, disaster sequence, conflict, outbreak)? If so, set situationId.
-   - Group events that are part of the same ongoing crisis.
-   - Do NOT group unrelated events just because they are geographically close.
+2. **Situation assignment**: Does this event belong to an ongoing situation? If so, set situationId.
+   - Group events that are part of the same ongoing crisis, conflict, disaster zone, or regional security concern.
+   - Be BROAD in grouping: events in the same country about the same type of crisis belong together.
 
-3. **New situation**: Should this event start a NEW situation? Only if it is a significant event likely to have follow-up reports (major disaster, conflict escalation, disease outbreak). Minor one-off events do not need situations.
+3. **New situation**: If no existing situation matches, create a new one. EVERY event must belong to a situation.
+   - Use a clear, descriptive title for the situation (e.g., "Ukraine Conflict", "East Africa Drought", "Myanmar Civil War").
+   - Situations represent ongoing regional concerns, not individual incidents.
 
 RULES:
-- duplicateOf and situationId are MUTUALLY EXCLUSIVE. If the event is a duplicate, set ONLY duplicateOf (situationId and newSituation must be null).
-- If assigning to an existing situation, set ONLY situationId (duplicateOf and newSituation must be null).
-- If creating a new situation, set ONLY newSituation (duplicateOf and situationId must be null).
-- If the event is standalone (not a duplicate, no situation), set ALL fields to null.`;
+- EVERY event MUST result in exactly one action: duplicate, assign to situation, or create new situation.
+- duplicateOf, situationId, and newSituation are MUTUALLY EXCLUSIVE — set exactly ONE.
+- If the event is a duplicate, set ONLY duplicateOf.
+- If assigning to an existing situation, set ONLY situationId.
+- If no situation matches, set ONLY newSituation. Never leave all fields null.`;
 
-const groq = createGroq();
+const openai = createOpenAI();
+// const groq = createGroq();
 
 function formatCandidates(events: EventWithCoords[]): string {
   if (events.length === 0) return "None";
@@ -74,7 +79,8 @@ function formatSituations(situations: SituationWithCoords[]): string {
 export class Judgment {
   private model: string;
 
-  constructor(model = "llama-3.1-8b-instant") {
+  constructor(model = "gpt-5-nano") {
+    // constructor(model = "llama-3.1-8b-instant") {
     this.model = model;
   }
 
@@ -111,7 +117,8 @@ Analyze the new event against the candidates and situations above.`;
 
       const { object } = await withRetry(() =>
         generateObject({
-          model: groq(this.model),
+          model: openai(this.model),
+          // model: groq(this.model),
           schema: judgmentSchema,
           system: SYSTEM_PROMPT,
           prompt,
