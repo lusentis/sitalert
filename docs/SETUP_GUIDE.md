@@ -22,11 +22,11 @@ Set up via Neon MCP tools or Neon Console:
 3. For the collector, find the TCP URL in Upstash Console → Database → Details → Connection
 4. Set `REDIS_URL` (format: `rediss://default:TOKEN@HOST:6379`) in collector environment
 
-## 3. OpenAI API Key
+## 3. Groq API Key
 
-1. Get key from https://platform.openai.com/api-keys
-2. Model used: `gpt-4o-mini` (cost-effective for classification)
-3. Set `OPENAI_API_KEY` in collector environment
+1. Get key from https://console.groq.com/keys
+2. Model used: `llama-3.1-8b-instant` (free tier, fast inference)
+3. Set `GROQ_API_KEY` in collector environment
 
 ## 4. Telegram Credentials (Phase 2)
 
@@ -62,6 +62,6 @@ Set up via Neon MCP tools or Neon Console:
 |---|---|
 | Neon | `pnpm db:studio` opens and shows events table |
 | Upstash | `curl $UPSTASH_REDIS_REST_URL/ping -H "Authorization: Bearer $TOKEN"` returns PONG |
-| OpenAI | Start collector, check logs for successful classification |
+| Groq | Start collector, check logs for successful classification |
 | Collector | `pnpm dev:collector` — events appear in Neon within 60s |
 | Web | `pnpm dev:web` — map loads, events appear after collector runs |

@@ -82,7 +82,7 @@ export class UsTravelAdvisoriesAdapter extends BaseAdapter {
       const countryMatch = advisory.Title.match(/^(.+?)\s*-\s*Level/i);
       const countryName = countryMatch ? countryMatch[1].trim() : countryCode;
 
-      // Emit without category — let the pipeline's gpt-5-nano classifier handle it
+      // Emit without category — let the pipeline's LLM classifier handle it
       const raw: RawEvent = {
         sourceAdapter: this.name,
         platform: this.platform,

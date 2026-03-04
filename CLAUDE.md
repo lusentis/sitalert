@@ -18,7 +18,7 @@ packages/db      → Drizzle ORM schema, PostGIS queries, Neon client factories
 | Monorepo | Turborepo + pnpm workspaces |
 | Frontend | Next.js 15 (App Router), Tailwind CSS, shadcn/ui |
 | Map | MapCN (MapLibre GL JS) — free, no API key |
-| LLM | OpenAI gpt-4o-mini via Vercel AI SDK (`generateObject`) |
+| LLM | Groq Llama 3.1 8B Instant via Vercel AI SDK (`generateObject`) |
 | Database | Neon PostgreSQL + PostGIS + pg_trgm |
 | Cache/PubSub | Upstash Redis (REST for web, TCP/ioredis for collector) |
 | ORM | Drizzle ORM (`neon-http` for web, `neon-serverless` for collector) |
@@ -51,7 +51,7 @@ See `.env.example` for all variables. Key services:
 - `DATABASE_URL` — Neon PostgreSQL connection string
 - `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` — Upstash Redis (web)
 - `REDIS_URL` — Upstash Redis TCP (collector pub/sub)
-- `OPENAI_API_KEY` — OpenAI for LLM classification (collector)
+- `GROQ_API_KEY` — Groq for LLM classification (collector)
 
 ## Package Relationships
 

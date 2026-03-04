@@ -20,9 +20,9 @@ importers:
 
   apps/collector:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^1.2.0
-        version: 1.3.24(zod@3.25.76)
+      '@ai-sdk/groq':
+        specifier: ^1.1.0
+        version: 1.2.9(zod@3.25.76)
       '@neondatabase/serverless':
         specifier: ^0.10.0
         version: 0.10.4
@@ -192,8 +192,8 @@ importers:
 
 packages:
 
-  '@ai-sdk/openai@1.3.24':
-    resolution: {integrity: sha512-GYXnGJTHRTZc4gJMSmFRgEQudjqd4PUN0ZjQhPwOAYH1yOAvQoG/Ikqs+HyISRbLPCrhbZnPKCNHuRU4OfpW0Q==}
+  '@ai-sdk/groq@1.2.9':
+    resolution: {integrity: sha512-7MoDaxm8yWtiRbD1LipYZG0kBl+Xe0sv/EeyxnHnGPZappXdlgtdOgTZVjjXkT3nWP30jjZi9A45zoVrBMb3Xg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -4504,7 +4504,7 @@ packages:
 
 snapshots:
 
-  '@ai-sdk/openai@1.3.24(zod@3.25.76)':
+  '@ai-sdk/groq@1.2.9(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
       '@ai-sdk/provider-utils': 2.2.8(zod@3.25.76)

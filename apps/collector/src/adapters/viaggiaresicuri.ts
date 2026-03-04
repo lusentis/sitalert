@@ -158,7 +158,7 @@ export class ViaggiareSicuriAdapter extends BaseAdapter {
       const countryName = ISO3_TO_NAME[item.nazione];
       const title = item.titolo.trim();
 
-      // Emit without category/severity — let the pipeline's gpt-5-nano classifier handle it
+      // Emit without category/severity — let the pipeline's LLM classifier handle it
       const raw: RawEvent = {
         sourceAdapter: this.name,
         platform: this.platform,

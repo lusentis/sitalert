@@ -15,7 +15,7 @@
     "telegram:session": "tsx scripts/generate-telegram-session.ts"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^1.2.0",
+    "@ai-sdk/groq": "^1.1.0",
     "@neondatabase/serverless": "^0.10.0",
     "@travelrisk/db": "workspace:*",
     "@travelrisk/shared": "workspace:*",
