@@ -9,7 +9,7 @@ import {
   type EventCategory,
 } from "@travelrisk/shared";
 import { CATEGORY_ICONS } from "@/lib/category-icons";
-import { RISK_LEVELS } from "@/lib/compute-country-risk";
+import { ADVISORY_LEVELS } from "@/lib/compute-country-risk";
 
 interface MapLegendProps {
   choroplethActive?: boolean;
@@ -87,10 +87,10 @@ export function MapLegend({ choroplethActive = false }: MapLegendProps) {
         {choroplethActive && (
           <div className="mt-2.5 pt-2 border-t border-border">
             <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-              Country Risk
+              Travel Advisory
             </span>
             <div className="flex gap-0.5 mt-1">
-              {RISK_LEVELS.map((level) => (
+              {ADVISORY_LEVELS.map((level) => (
                 <div key={level.label} className="flex-1 text-center">
                   <div
                     className="h-1.5 rounded-full"

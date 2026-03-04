@@ -1,4 +1,4 @@
-import type { GeoJSONFeatureCollection } from "@travelrisk/db";
+import type { GeoJSONFeatureCollection, SituationWithCoords } from "@travelrisk/db";
 import type { EventStats } from "@travelrisk/db";
 
 export interface FetchEventsParams {
@@ -58,4 +58,93 @@ export async function fetchStats(): Promise<EventStats> {
   }
 
   return response.json() as Promise<EventStats>;
+}
+
+export interface FetchSituationsParams {
+  categories?: string[];
+  minSeverity?: number;
+  after?: string;
+}
+
+export async function fetchSituations(
+  params: FetchSituationsParams,
+  signal?: AbortSignal,
+): Promise<SituationWithCoords[]> {
+  const searchParams = new URLSearchParams();
+
+  if (params.categories && params.categories.length > 0) {
+    searchParams.set("categories", params.categories.join(","));
+  }
+
+  if (params.minSeverity !== undefined && params.minSeverity > 1) {
+    searchParams.set("min_severity", String(params.minSeverity));
+  }
+
+  if (params.after) {
+    searchParams.set("after", params.after);
+  }
+
+  const response = await fetch(`/api/situations?${searchParams.toString()}`, {
+    signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch situations: ${response.status}`);
+  }
+
+  const json = await response.json();
+  return json.data as SituationWithCoords[];
+}
+
+export interface SituationEvent {
+  id: string;
+  title: string;
+  summary: string;
+  category: string;
+  severity: number;
+  locationName: string;
+  countryCode: string | null;
+  timestamp: string;
+  sources: Array<{ name: string; platform: string; url?: string }>;
+  lng: number;
+  lat: number;
+}
+
+export async function fetchSituationEvents(
+  situationId: string,
+  signal?: AbortSignal,
+): Promise<SituationEvent[]> {
+  const response = await fetch(`/api/situations/${situationId}/events`, {
+    signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch situation events: ${response.status}`);
+  }
+
+  const json = await response.json();
+  return json.data as SituationEvent[];
+}
+
+export interface AdvisoryData {
+  countryCode: string;
+  level: number;
+  title: string;
+  summary: string;
+  sourceUrl: string;
+  sourceName: string;
+  updatedAt: string;
+}
+
+export async function fetchAdvisories(
+  signal?: AbortSignal,
+): Promise<AdvisoryData[]> {
+  const response = await fetch("/api/advisories", { signal });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch advisories: ${response.status}`);
+  }
+
+  const json = await response.json();
+  return json.data as AdvisoryData[];
 }

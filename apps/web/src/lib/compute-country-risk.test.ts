@@ -1,78 +1,53 @@
 import { describe, it, expect } from "vitest";
-import { computeCountryRisk, riskColor } from "./compute-country-risk";
-import type { GeoJSONFeatureCollection } from "@travelrisk/db";
+import { buildAdvisoryScores, advisoryColor, ADVISORY_LEVELS } from "./compute-country-risk";
 
-function makeFeature(countryCode: string | null, severity: number) {
-  return {
-    type: "Feature" as const,
-    geometry: {
-      type: "Point" as const,
-      coordinates: [0, 0] as [number, number],
-    },
-    properties: {
-      id: crypto.randomUUID(),
-      title: "Test",
-      summary: "",
-      category: "conflict",
-      severity,
-      confidence: 1,
-      locationName: "Test",
-      countryCode,
-      timestamp: new Date().toISOString(),
-      ageMinutes: 0,
-      sourceCount: 1,
-      sources: [],
-    },
-  };
-}
-
-describe("computeCountryRisk", () => {
-  it("sums severity per country code", () => {
-    const data: GeoJSONFeatureCollection = {
-      type: "FeatureCollection",
-      features: [
-        makeFeature("US", 3),
-        makeFeature("US", 4),
-        makeFeature("GB", 2),
-      ],
-    };
-    const scores = computeCountryRisk(data);
-    expect(scores.get("US")).toBe(7);
-    expect(scores.get("GB")).toBe(2);
-  });
-
-  it("skips features with null countryCode", () => {
-    const data: GeoJSONFeatureCollection = {
-      type: "FeatureCollection",
-      features: [makeFeature(null, 5), makeFeature("FR", 1)],
-    };
-    const scores = computeCountryRisk(data);
-    expect(scores.has("")).toBe(false);
+describe("buildAdvisoryScores", () => {
+  it("builds map from advisory data", () => {
+    const advisories = [
+      { countryCode: "SY", level: 4, title: "", summary: "", sourceUrl: "", sourceName: "", updatedAt: "" },
+      { countryCode: "FR", level: 1, title: "", summary: "", sourceUrl: "", sourceName: "", updatedAt: "" },
+    ];
+    const scores = buildAdvisoryScores(advisories);
+    expect(scores.get("SY")).toBe(4);
     expect(scores.get("FR")).toBe(1);
+    expect(scores.size).toBe(2);
   });
 
-  it("returns empty map for no features", () => {
-    const data: GeoJSONFeatureCollection = {
-      type: "FeatureCollection",
-      features: [],
-    };
-    expect(computeCountryRisk(data).size).toBe(0);
+  it("uppercases country codes", () => {
+    const advisories = [
+      { countryCode: "sy", level: 4, title: "", summary: "", sourceUrl: "", sourceName: "", updatedAt: "" },
+    ];
+    const scores = buildAdvisoryScores(advisories);
+    expect(scores.get("SY")).toBe(4);
   });
 });
 
-describe("riskColor", () => {
-  it("returns transparent for score 0", () => {
-    expect(riskColor(0)).toBe("transparent");
+describe("advisoryColor", () => {
+  it("returns transparent for level 1", () => {
+    expect(advisoryColor(1)).toBe("transparent");
   });
 
-  it("returns low color for scores 1-5", () => {
-    const color = riskColor(3);
-    expect(color).not.toBe("transparent");
+  it("returns amber for level 2", () => {
+    expect(advisoryColor(2)).toBe("#E2B553");
   });
 
-  it("returns critical color for scores 31+", () => {
-    const low = riskColor(1);
-    const critical = riskColor(50);
-    expect(critical).not.toBe(low);
+  it("returns orange for level 3", () => {
+    expect(advisoryColor(3)).toBe("#D48A2E");
+  });
+
+  it("returns deep red for level 4", () => {
+    expect(advisoryColor(4)).toBe("#8B2D15");
+  });
+
+  it("returns transparent for unknown levels", () => {
+    expect(advisoryColor(0)).toBe("transparent");
+    expect(advisoryColor(5)).toBe("transparent");
+  });
+});
+
+describe("ADVISORY_LEVELS", () => {
+  it("has 3 visible levels for legend (excludes level 1)", () => {
+    expect(ADVISORY_LEVELS).toHaveLength(3);
+    expect(ADVISORY_LEVELS[0].level).toBe(2);
   });
 });

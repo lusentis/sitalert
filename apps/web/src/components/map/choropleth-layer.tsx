@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useMap } from "@/components/ui/map";
-import { riskColor } from "@/lib/compute-country-risk";
+import { advisoryColor } from "@/lib/compute-country-risk";
 
 const SOURCE_ID = "country-boundaries";
 const FILL_LAYER = "country-risk-fill";
@@ -26,7 +26,7 @@ function buildFillColorExpression(
   }
   const matchExpr: unknown[] = ["match", ["get", ISO_PROPERTY]];
   for (const [code, score] of scores) {
-    matchExpr.push(code, riskColor(score));
+    matchExpr.push(code, advisoryColor(score));
   }
   matchExpr.push("transparent"); // default
   return matchExpr as maplibregl.ExpressionSpecification;
