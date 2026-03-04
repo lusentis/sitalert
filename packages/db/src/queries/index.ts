@@ -8,6 +8,14 @@ export {
   type EventWithCoords,
   type GeoJSONFeature,
   type GeoJSONFeatureCollection,
-} from "./events.js";
+} from "./events";
 
-export { getStats24h, type EventStats } from "./stats.js";
+export { getStats24h, type EventStats } from "./stats";
+
+export {
+  findActiveSituations,
+  createSituation,
+  updateSituation,
+  resolveExpiredSituations,
+  type SituationWithCoords,
+} from "./situations";
