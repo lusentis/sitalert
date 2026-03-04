@@ -1,4 +1,4 @@
-import { createPoolClient } from "@travelrisk/db";
+import { createPoolClient, resolveExpiredSituations } from "@travelrisk/db";
 import Redis from "ioredis";
 import WebSocket from "ws";
 import { readFileSync } from "node:fs";
@@ -248,6 +248,18 @@ async function main(): Promise<void> {
   console.log(
     `[collector] Running with ${adapters.length} active adapter(s)`,
   );
+
+  // Run every hour — resolve situations with no events in 48h
+  setInterval(async () => {
+    try {
+      const count = await resolveExpiredSituations(db, 48);
+      if (count > 0) {
+        console.log(`[situations] Resolved ${count} expired situations`);
+      }
+    } catch (err) {
+      console.error("[situations] Error resolving expired:", err instanceof Error ? err.message : err);
+    }
+  }, 60 * 60 * 1000);
 
   // Graceful shutdown
   const shutdown = async (signal: string) => {
