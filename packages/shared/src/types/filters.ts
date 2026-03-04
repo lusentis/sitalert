@@ -15,7 +15,7 @@ export const EventsQuerySchema = z.object({
     .optional(),
   categories: z.array(EventCategory).optional(),
   minSeverity: z.number().int().min(1).max(5).default(1),
-  minConfidence: z.number().min(0).max(1).default(0),
+  minConfidence: z.number().min(0).max(1).default(0.4),
   after: z.string().datetime().optional(),
   before: z.string().datetime().optional(),
   limit: z.number().int().min(1).max(5000).optional(),

@@ -14,7 +14,6 @@ export interface BBox {
 interface UseMapEventsOptions {
   categories: string[];
   minSeverity: number;
-  minConfidence: number;
   after: string;
 }
 
@@ -31,7 +30,7 @@ interface UseMapEventsReturn {
  * Refetches only when filters change or refetch() is called (e.g. on SSE event).
  */
 export function useMapEvents(options: UseMapEventsOptions): UseMapEventsReturn {
-  const { categories, minSeverity, minConfidence, after } = options;
+  const { categories, minSeverity, after } = options;
   const [data, setData] = useState<GeoJSONFeatureCollection | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +54,6 @@ export function useMapEvents(options: UseMapEventsOptions): UseMapEventsReturn {
       {
         categories: categories.length > 0 ? categories : undefined,
         minSeverity,
-        minConfidence,
         after,
       },
       controller.signal,
@@ -77,7 +75,7 @@ export function useMapEvents(options: UseMapEventsOptions): UseMapEventsReturn {
           setIsLoading(false);
         }
       });
-  }, [categories, minSeverity, minConfidence, after]);
+  }, [categories, minSeverity, after]);
 
   // Fetch when filters change
   useEffect(() => {

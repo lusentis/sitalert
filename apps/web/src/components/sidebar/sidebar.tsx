@@ -5,12 +5,12 @@ import type { NormalizedEvent } from "@travelrisk/shared";
 import type { Filters } from "@/hooks/use-filters";
 import { CategoryFilter } from "./category-filter";
 import { SeverityFilter } from "./severity-filter";
-import { ConfidenceFilter } from "./confidence-filter";
 import { EventFeed } from "./event-feed";
 import { WelcomeBanner } from "./welcome-banner";
 import { Separator } from "@/components/ui/separator";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { Drawer } from "vaul";
-import { Activity } from "lucide-react";
+import { Activity, ChevronRight } from "lucide-react";
 import { useOnboardingDismissed } from "@/hooks/use-onboarding";
 
 interface SidebarContentProps {
@@ -57,14 +57,18 @@ function SidebarContent({
         onSetAll={() => filters.setCategories([] as string[])}
         counts={counts}
       />
-      <SeverityFilter
-        value={filters.minSeverity}
-        onChange={filters.setMinSeverity}
-      />
-      <ConfidenceFilter
-        value={filters.minConfidence}
-        onChange={filters.setMinConfidence}
-      />
+      <Collapsible>
+        <CollapsibleTrigger className="group flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors w-full">
+          <ChevronRight className="h-3 w-3 transition-transform group-data-[state=open]:rotate-90" />
+          Filters
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-3">
+          <SeverityFilter
+            value={filters.minSeverity}
+            onChange={filters.setMinSeverity}
+          />
+        </CollapsibleContent>
+      </Collapsible>
       <Separator />
       <EventFeed
         data={data}

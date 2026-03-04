@@ -5,7 +5,6 @@ export interface FetchEventsParams {
   bbox?: { west: number; south: number; east: number; north: number };
   categories?: string[];
   minSeverity?: number;
-  minConfidence?: number;
   after?: string;
   limit?: number;
 }
@@ -30,10 +29,6 @@ export async function fetchEventsGeoJSON(
 
   if (params.minSeverity !== undefined && params.minSeverity > 1) {
     searchParams.set("min_severity", String(params.minSeverity));
-  }
-
-  if (params.minConfidence !== undefined && params.minConfidence > 0) {
-    searchParams.set("min_confidence", String(params.minConfidence));
   }
 
   if (params.after) {

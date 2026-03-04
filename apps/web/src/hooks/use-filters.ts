@@ -15,8 +15,7 @@ const TIME_RANGE_OPTIONS = ["1h", "6h", "24h", "7d", "30d"] as const;
 
 const filtersParsers = {
   categories: parseAsArrayOf(parseAsString).withDefault([]),
-  minSeverity: parseAsInteger.withDefault(1),
-  minConfidence: parseAsFloat.withDefault(0),
+  minSeverity: parseAsInteger.withDefault(2),
   timeRange: parseAsStringLiteral(TIME_RANGE_OPTIONS).withDefault("24h"),
 };
 
@@ -48,13 +47,6 @@ export function useFilters() {
     [setFilters],
   );
 
-  const setMinConfidence = useCallback(
-    (value: number) => {
-      setFilters((prev) => ({ ...prev, minConfidence: value }));
-    },
-    [setFilters],
-  );
-
   const setCategories = useCallback(
     (categories: string[]) => {
       setFilters((prev) => ({ ...prev, categories }));
@@ -80,7 +72,6 @@ export function useFilters() {
     toggleCategory,
     setCategories,
     setMinSeverity,
-    setMinConfidence,
     setTimeRange,
   };
 }

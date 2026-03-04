@@ -34,7 +34,7 @@ export async function queryEventsInViewport(
     north,
     categories,
     minSeverity = 1,
-    minConfidence = 0,
+    minConfidence = 0.4,
     after,
     limit = 100,
     offset = 0,

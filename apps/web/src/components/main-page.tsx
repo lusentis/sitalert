@@ -22,7 +22,6 @@ export function MainPage() {
   const { data, isLoading, refetch } = useMapEvents({
     categories: filters.categories,
     minSeverity: filters.minSeverity,
-    minConfidence: filters.minConfidence,
     after: filters.after,
   });
 
@@ -96,7 +95,7 @@ export function MainPage() {
             value={filters.timeRange}
             onChange={filters.setTimeRange}
           />
-          <div className="absolute bottom-16 md:bottom-4 right-4 z-10 flex flex-col items-end gap-2">
+          <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-2">
             <MapLegend choroplethActive={choroplethVisible} />
             <ChoroplethToggle
               active={choroplethVisible}
