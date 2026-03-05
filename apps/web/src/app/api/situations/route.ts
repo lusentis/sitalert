@@ -43,9 +43,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ data: situations });
   } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : "Internal server error";
-    console.error("Situations API error:", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("Situations API error:", err instanceof Error ? err.message : err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

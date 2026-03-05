@@ -148,6 +148,11 @@ export function MainPage() {
   // Combine errors for display
   const error = eventsError ?? situationsError;
 
+  const handleRetry = useCallback(() => {
+    refetch();
+    refetchSituations();
+  }, [refetch, refetchSituations]);
+
   return (
     <TooltipProvider delayDuration={400}>
       <div className="flex h-screen w-screen overflow-hidden">
@@ -158,6 +163,7 @@ export function MainPage() {
           isConnected={isConnected}
           counts={categoryCounts}
           error={error}
+          onRetry={handleRetry}
           events={data}
           lastStreamEvent={lastEvent}
           eventsLoading={eventsLoading}

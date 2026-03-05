@@ -1,5 +1,13 @@
 import type { GeoJSONFeatureCollection, SituationWithCoords } from "@travelrisk/db";
 
+function userFacingError(response: Response): string {
+  if (response.status === 0 || !response.status) return "Network error — check your connection and try again.";
+  if (response.status === 408 || response.status === 504) return "Request timed out — try again in a moment.";
+  if (response.status === 429) return "Too many requests — please wait a moment.";
+  if (response.status >= 500) return "Server error — we're looking into it.";
+  return `Request failed (${response.status}).`;
+}
+
 export interface FetchEventsParams {
   bbox?: { west: number; south: number; east: number; north: number };
   categories?: string[];
@@ -43,7 +51,7 @@ export async function fetchEventsGeoJSON(
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch events: ${response.status}`);
+    throw new Error(userFacingError(response));
   }
 
   return response.json() as Promise<GeoJSONFeatureCollection>;
@@ -78,7 +86,7 @@ export async function fetchSituations(
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch situations: ${response.status}`);
+    throw new Error(userFacingError(response));
   }
 
   const json = await response.json();
@@ -108,7 +116,7 @@ export async function fetchSituationEvents(
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch situation events: ${response.status}`);
+    throw new Error(userFacingError(response));
   }
 
   const json = await response.json();
@@ -131,7 +139,7 @@ export async function fetchAdvisories(
   const response = await fetch("/api/advisories", { signal });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch advisories: ${response.status}`);
+    throw new Error(userFacingError(response));
   }
 
   const json = await response.json();

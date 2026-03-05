@@ -70,7 +70,9 @@ export function useMapEvents(options: UseMapEventsOptions): UseMapEventsReturn {
         }
         if (currentFetchId === fetchIdRef.current) {
           const message =
-            err instanceof Error ? err.message : "Unknown error fetching events";
+            err instanceof TypeError
+              ? "Network error — check your connection and try again."
+              : err instanceof Error ? err.message : "Something went wrong. Try again.";
           setError(message);
           setIsLoading(false);
         }

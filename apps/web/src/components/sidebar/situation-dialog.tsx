@@ -33,15 +33,18 @@ export function SituationDialog({
 }: SituationDialogProps) {
   const [events, setEvents] = useState<SituationEvent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!situation || !open) {
       setEvents([]);
+      setError(null);
       return;
     }
 
     const controller = new AbortController();
     setIsLoading(true);
+    setError(null);
 
     fetchSituationEvents(situation.id, controller.signal)
       .then((data) => {
@@ -50,7 +53,11 @@ export function SituationDialog({
       })
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === "AbortError") return;
-        console.error("Failed to fetch situation events:", err);
+        const message =
+          err instanceof TypeError
+            ? "Network error — check your connection."
+            : err instanceof Error ? err.message : "Failed to load events.";
+        setError(message);
         setIsLoading(false);
       });
 
@@ -125,7 +132,12 @@ export function SituationDialog({
               Loading events...
             </div>
           )}
-          {!isLoading && events.length === 0 && (
+          {!isLoading && error && (
+            <div className="text-xs text-red-400 py-4 text-center">
+              {error}
+            </div>
+          )}
+          {!isLoading && !error && events.length === 0 && (
             <div className="text-xs text-muted-foreground py-4 text-center">
               No linked events yet.
             </div>

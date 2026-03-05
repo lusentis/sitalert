@@ -125,9 +125,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : "Internal server error";
-    console.error("Events API error:", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("Events API error:", err instanceof Error ? err.message : err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

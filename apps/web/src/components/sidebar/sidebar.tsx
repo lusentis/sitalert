@@ -36,6 +36,7 @@ interface SidebarContentProps {
   searchQuery: string;
   debouncedSearch: string;
   onSearchChange: (value: string) => void;
+  onRetry?: () => void;
 }
 
 type FeedTab = "situations" | "events";
@@ -57,6 +58,7 @@ function SidebarContent({
   searchQuery,
   debouncedSearch,
   onSearchChange,
+  onRetry,
 }: SidebarContentProps) {
   const { dismissed, dismiss } = useOnboardingDismissed();
   const [activeTab, setActiveTab] = useState<FeedTab>("situations");
@@ -89,7 +91,17 @@ function SidebarContent({
       {error && (
         <div className="flex items-start gap-2 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
           <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-          <span>{error}</span>
+          <div className="flex-1 min-w-0">
+            <span>{error}</span>
+            {onRetry && (
+              <button
+                onClick={onRetry}
+                className="ml-2 underline underline-offset-2 hover:text-red-300 transition-colors"
+              >
+                Retry
+              </button>
+            )}
+          </div>
         </div>
       )}
 
