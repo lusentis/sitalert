@@ -40,9 +40,11 @@ export function SituationFeed({
   };
 
   const items = (() => {
-    const sorted = (situations ?? []).slice().sort(
-      (a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime(),
-    );
+    const sorted = (situations ?? []).slice().sort((a, b) => {
+      const aTime = a.lastEventAt ? new Date(a.lastEventAt).getTime() : new Date(a.firstSeen).getTime();
+      const bTime = b.lastEventAt ? new Date(b.lastEventAt).getTime() : new Date(b.firstSeen).getTime();
+      return bTime - aTime;
+    });
     if (!searchQuery?.trim()) return sorted;
     const q = searchQuery.toLowerCase();
     return sorted.filter(

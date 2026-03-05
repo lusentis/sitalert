@@ -8,6 +8,7 @@ type DbClient = HttpClient | PoolClient;
 export interface SituationWithCoords extends Situation {
   lng: number;
   lat: number;
+  lastEventAt: Date | null;
 }
 
 export async function findActiveSituations(
@@ -24,6 +25,11 @@ export async function findActiveSituations(
       situation: situations,
       lng: sql<number>`ST_X(${situations.location}::geometry)`,
       lat: sql<number>`ST_Y(${situations.location}::geometry)`,
+      lastEventAt: sql<Date | null>`(
+        SELECT MAX(${events.timestamp})
+        FROM ${events}
+        WHERE ${events.situationId} = ${situations.id}
+      )`,
     })
     .from(situations)
     .where(
@@ -38,6 +44,7 @@ export async function findActiveSituations(
     ...row.situation,
     lng: row.lng,
     lat: row.lat,
+    lastEventAt: row.lastEventAt,
   }));
 }
 
@@ -137,7 +144,6 @@ export async function upsertSituation(
       set: {
         severity: sql`GREATEST(${situations.severity}, ${data.severity})`,
         summary: data.summary,
-        lastUpdated: now,
         updatedAt: now,
         status: "active" as const,
       },
@@ -305,15 +311,27 @@ export async function querySituationsForFeed(
       situation: situations,
       lng: sql<number>`ST_X(${situations.location}::geometry)`,
       lat: sql<number>`ST_Y(${situations.location}::geometry)`,
+      lastEventAt: sql<Date | null>`(
+        SELECT MAX(${events.timestamp})
+        FROM ${events}
+        WHERE ${events.situationId} = ${situations.id}
+      )`,
     })
     .from(situations)
     .where(and(...conditions))
-    .orderBy(desc(situations.lastUpdated));
+    .orderBy(
+      sql`COALESCE((
+        SELECT MAX(${events.timestamp})
+        FROM ${events}
+        WHERE ${events.situationId} = ${situations.id}
+      ), ${situations.firstSeen}) DESC`,
+    );
 
   return rows.map((row) => ({
     ...row.situation,
     lng: row.lng,
     lat: row.lat,
+    lastEventAt: row.lastEventAt,
   }));
 }
 
