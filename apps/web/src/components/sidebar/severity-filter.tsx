@@ -19,10 +19,10 @@ export function SeverityFilter({ value, onChange }: SeverityFilterProps) {
         <Tooltip>
           <TooltipTrigger asChild>
             <legend className="text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-help border-b border-dotted border-muted-foreground/40">
-              Min Severity
+              Severity
             </legend>
           </TooltipTrigger>
-          <TooltipContent side="top">Filter by impact level (1=Minor to 5=Catastrophic).</TooltipContent>
+          <TooltipContent side="top">Only show events at or above this level.</TooltipContent>
         </Tooltip>
         <span
           className="text-xs font-medium"

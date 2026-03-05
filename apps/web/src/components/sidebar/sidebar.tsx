@@ -118,7 +118,7 @@ function SidebarContent({
       <Collapsible>
         <CollapsibleTrigger className="group flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors w-full">
           <ChevronRight className="h-3 w-3 transition-transform group-data-[state=open]:rotate-90" />
-          Filters
+          More filters
         </CollapsibleTrigger>
         <CollapsibleContent className="pt-3">
           <SeverityFilter

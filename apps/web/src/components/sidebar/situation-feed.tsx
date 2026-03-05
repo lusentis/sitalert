@@ -74,7 +74,7 @@ export function SituationFeed({
         </h3>
         {isLoading && (
           <span className="text-xs text-muted-foreground motion-safe:animate-pulse">
-            Loading...
+            Loading situations...
           </span>
         )}
       </div>

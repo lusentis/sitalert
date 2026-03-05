@@ -103,7 +103,7 @@ export function EventFeed({
         </h3>
         {isLoading && (
           <span className="text-xs text-muted-foreground motion-safe:animate-pulse">
-            Loading...
+            Loading events...
           </span>
         )}
       </div>

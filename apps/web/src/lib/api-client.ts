@@ -4,7 +4,7 @@ function userFacingError(response: Response): string {
   if (response.status === 0 || !response.status) return "Network error — check your connection and try again.";
   if (response.status === 408 || response.status === 504) return "Request timed out — try again in a moment.";
   if (response.status === 429) return "Too many requests — please wait a moment.";
-  if (response.status >= 500) return "Server error — we're looking into it.";
+  if (response.status >= 500) return "Server error — try again shortly.";
   return `Request failed (${response.status}).`;
 }
 

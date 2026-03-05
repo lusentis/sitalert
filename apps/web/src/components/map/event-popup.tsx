@@ -121,7 +121,7 @@ export function EventPopup({ features, currentIndex, onNavigate, onClose }: Even
             className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
           >
             <ExternalLink className="h-3 w-3" />
-            View source
+            Read more
           </a>
         )}
 

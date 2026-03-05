@@ -57,7 +57,7 @@ export function AdvisoryPopup({ advisory, lngLat, onClose }: AdvisoryPopupProps)
           className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
         >
           <ExternalLink className="h-3 w-3" />
-          Full advisory
+          Read full advisory
         </a>
       </div>
     </MapPopup>

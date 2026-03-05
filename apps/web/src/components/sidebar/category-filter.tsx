@@ -42,7 +42,7 @@ export function CategoryFilter({
                   Categories
                 </legend>
               </TooltipTrigger>
-              <TooltipContent side="top">Toggle event types. Color-coded on the map.</TooltipContent>
+              <TooltipContent side="top">Show or hide event categories. Each has a matching color on the map.</TooltipContent>
             </Tooltip>
           </CollapsibleTrigger>
           <div className="flex items-center gap-2">
@@ -58,7 +58,7 @@ export function CategoryFilter({
                   onClick={handleInvert}
                   className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Invert
+                  Flip
                 </button>
               </>
             )}
