@@ -120,10 +120,26 @@
         {
           "name": "ANSA English",
           "url": "https://www.ansa.it/english/news/rss.xml"
+        },
+        {
+          "name": "NYT World",
+          "url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
+        },
+        {
+          "name": "Times of India",
+          "url": "https://timesofindia.indiatimes.com/rssfeedstopstories.cms"
+        },
+        {
+          "name": "SCMP",
+          "url": "https://www.scmp.com/rss/3/feed"
+        },
+        {
+          "name": "NDTV",
+          "url": "https://feeds.feedburner.com/NDTV-LatestNews"
         }
       ],
       "pollingInterval": 300000,
-      "enabled": false
+      "enabled": true
     },
     "travel_advisories": {
       "name": "Travel Advisories",
