@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SituationCard } from "./situation-card";
 import { SituationDialog } from "./situation-dialog";
+import { CheckCircle } from "lucide-react";
 
 interface SituationFeedProps {
   situations: SituationWithCoords[] | null;
@@ -99,7 +100,7 @@ export function SituationFeed({
               </div>
             ))
           )}
-          {items.length === 0 && !isLoading && (
+          {items.length === 0 && !isLoading && situations && situations.length > 0 && (
             <div className="text-center py-10 space-y-3">
               <div className="relative size-10 mx-auto opacity-40">
                 <div className="absolute inset-0 rounded-full border border-current" />
@@ -112,6 +113,19 @@ export function SituationFeed({
                 </p>
                 <p className="text-xs text-muted-foreground/70">
                   Try a different time range or broaden your filters.
+                </p>
+              </div>
+            </div>
+          )}
+          {items.length === 0 && !isLoading && situations && situations.length === 0 && (
+            <div className="text-center py-10 space-y-3">
+              <CheckCircle className="size-10 mx-auto text-emerald-500/60" />
+              <div className="space-y-1">
+                <p className="text-sm text-emerald-400/80">
+                  All clear — no active situations
+                </p>
+                <p className="text-xs text-muted-foreground/70">
+                  No situations are being tracked right now.
                 </p>
               </div>
             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Info } from "lucide-react";
+import { Info, X } from "lucide-react";
 import {
   EVENT_CATEGORIES,
   CATEGORY_METADATA,
@@ -29,9 +29,9 @@ export function MapLegend({ choroplethActive = false }: MapLegendProps) {
             onClick={() => setExpanded(false)}
             aria-expanded={expanded}
             aria-label="Collapse legend"
-            className="text-muted-foreground hover:text-foreground transition-colors p-0.5"
+            className="text-muted-foreground hover:text-foreground transition-colors p-0.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
           >
-            <Info className="h-3.5 w-3.5" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
 
@@ -113,7 +113,7 @@ export function MapLegend({ choroplethActive = false }: MapLegendProps) {
       onClick={() => setExpanded(true)}
       aria-expanded={expanded}
       aria-label="Show map legend"
-      className="bg-card/90 backdrop-blur border border-border rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-lg text-muted-foreground hover:text-foreground transition-colors"
+      className="bg-card/90 backdrop-blur border border-border rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-lg text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
     >
       <Info className="h-3.5 w-3.5" />
       <span className="text-xs font-medium">Legend</span>

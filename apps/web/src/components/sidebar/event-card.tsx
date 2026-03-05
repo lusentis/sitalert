@@ -37,9 +37,10 @@ export function EventCard({ feature, onClick, isSelected }: EventCardProps) {
       onClick={() => onClick(feature)}
       aria-label={properties.title}
       className={cn(
-        "w-full text-left p-3 rounded-lg border border-border border-l-[3px] hover:bg-accent/50 transition-[color,background-color,border-color,box-shadow,transform] duration-150 motion-safe:hover:-translate-y-[1px] motion-safe:active:translate-y-0",
+        "w-full text-left p-3 rounded-lg border border-border border-l-4 hover:bg-accent/50 transition-[color,background-color,border-color,box-shadow,transform] duration-150 motion-safe:hover:-translate-y-[1px] motion-safe:active:translate-y-0",
         isSelected && "ring-1 ring-primary/60 bg-accent/30",
-        properties.severity >= 4 && !isSelected && "bg-red-500/[0.03]",
+        properties.severity >= 4 && !isSelected && "bg-red-500/[0.08]",
+        properties.severity >= 5 && !isSelected && "bg-red-500/[0.15]",
         isNew && "motion-safe:animate-slide-in",
       )}
       style={{ borderLeftColor: severityColor }}

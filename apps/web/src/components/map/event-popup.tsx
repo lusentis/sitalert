@@ -131,7 +131,7 @@ export function EventPopup({ features, currentIndex, onNavigate, onClose }: Even
               type="button"
               aria-label="Previous event"
               onClick={() => onNavigate((currentIndex - 1 + features.length) % features.length)}
-              className="p-0.5 rounded text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring transition-colors"
+              className="p-2 rounded text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring transition-colors"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -142,7 +142,7 @@ export function EventPopup({ features, currentIndex, onNavigate, onClose }: Even
               type="button"
               aria-label="Next event"
               onClick={() => onNavigate((currentIndex + 1) % features.length)}
-              className="p-0.5 rounded text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring transition-colors"
+              className="p-2 rounded text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring transition-colors"
             >
               <ChevronRight className="h-4 w-4" />
             </button>

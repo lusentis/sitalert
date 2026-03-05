@@ -33,9 +33,10 @@ export function SituationCard({ situation, onClick, isSelected }: SituationCardP
       onClick={() => onClick(situation)}
       aria-label={situation.title}
       className={cn(
-        "w-full text-left p-3 rounded-lg border border-border border-l-[3px] hover:bg-accent/50 transition-[color,background-color,border-color,box-shadow,transform] duration-150 motion-safe:hover:-translate-y-[1px] motion-safe:active:translate-y-0",
+        "w-full text-left p-3 rounded-lg border border-border border-l-4 hover:bg-accent/50 transition-[color,background-color,border-color,box-shadow,transform] duration-150 motion-safe:hover:-translate-y-[1px] motion-safe:active:translate-y-0",
         isSelected && "ring-1 ring-primary/60 bg-accent/30",
-        situation.severity >= 4 && !isSelected && "bg-red-500/[0.03]",
+        situation.severity >= 4 && !isSelected && "bg-red-500/[0.08]",
+        situation.severity >= 5 && !isSelected && "bg-red-500/[0.15]",
       )}
       style={{ borderLeftColor: severityColor }}
     >

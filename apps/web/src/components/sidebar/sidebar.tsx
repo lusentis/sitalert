@@ -112,7 +112,7 @@ function SidebarContent({
               {onRetry && (
                 <button
                   onClick={onRetry}
-                  className="ml-2 underline underline-offset-2 hover:text-red-300 transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+                  className="ml-2 rounded px-1.5 py-0.5 bg-red-500/20 text-red-300 hover:bg-red-500/30 font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
                 >
                   Retry
                 </button>
@@ -151,7 +151,7 @@ function SidebarContent({
             onClick={() => filters.setTab("situations")}
             className={`flex-1 text-xs font-medium py-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 ${
               filters.tab === "situations"
-                ? "bg-background text-foreground shadow-sm"
+                ? "bg-background text-foreground shadow-sm shadow-[inset_0_-2px_0_0_hsl(var(--primary))]"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -161,7 +161,7 @@ function SidebarContent({
             onClick={() => filters.setTab("events")}
             className={`flex-1 text-xs font-medium py-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 ${
               filters.tab === "events"
-                ? "bg-background text-foreground shadow-sm"
+                ? "bg-background text-foreground shadow-sm shadow-[inset_0_-2px_0_0_hsl(var(--primary))]"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -196,7 +196,7 @@ function SidebarContent({
           <button
             onClick={scrollToTop}
             aria-label="Scroll to top"
-            className="sticky bottom-3 left-1/2 -translate-x-1/2 float-right clear-both z-10 flex items-center gap-1.5 rounded-full bg-card border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-md hover:text-foreground transition-colors motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+            className="sticky bottom-3 mx-auto z-10 flex items-center gap-1.5 rounded-full bg-card border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-md hover:text-foreground transition-colors motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
           >
             <ArrowUp className="h-3 w-3" />
             Top
@@ -212,11 +212,11 @@ export function Sidebar(props: SidebarContentProps) {
 
   return (
     <>
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar — resizable via CSS */}
       <aside
         role="complementary"
         aria-label="Situations sidebar"
-        className="hidden md:flex w-80 lg:w-96 shrink-0 h-screen flex-col bg-card border-r border-border overflow-hidden"
+        className="hidden md:flex w-80 lg:w-96 min-w-[280px] max-w-[600px] shrink-0 h-screen flex-col bg-card border-r border-white/[0.08] shadow-[2px_0_15px_-3px_oklch(0_0_0/0.4)] overflow-hidden resize-x"
       >
         <SidebarContent {...props} />
       </aside>

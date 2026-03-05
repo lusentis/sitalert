@@ -15,7 +15,7 @@ export function ChoroplethToggle({ active, onToggle }: ChoroplethToggleProps) {
       aria-pressed={active}
       aria-label={active ? "Hide travel advisories layer" : "Show travel advisories layer"}
       className={cn(
-        "bg-card/90 backdrop-blur border border-border rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-lg transition-colors",
+        "bg-card/90 backdrop-blur border border-border rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-lg transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50",
         active
           ? "text-foreground border-primary/40"
           : "text-muted-foreground hover:text-foreground",

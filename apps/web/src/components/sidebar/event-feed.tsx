@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EventCard } from "./event-card";
 import type { NormalizedEvent } from "@travelrisk/shared";
 import { ageInMinutes } from "@travelrisk/shared";
-import { Clock } from "lucide-react";
+import { CheckCircle, Clock } from "lucide-react";
 
 interface EventFeedProps {
   data: GeoJSONFeatureCollection | null;
@@ -127,7 +127,7 @@ export function EventFeed({
               </div>
             ))
           )}
-          {features.length === 0 && !isLoading && (
+          {features.length === 0 && !isLoading && data && data.features.length > 0 && (
             <div className="text-center py-10 space-y-3">
               <div className="relative size-10 mx-auto opacity-40">
                 <div className="absolute inset-0 rounded-full border border-current" />
@@ -140,6 +140,19 @@ export function EventFeed({
                 </p>
                 <p className="text-xs text-muted-foreground/70">
                   Try a different time range or broaden your filters.
+                </p>
+              </div>
+            </div>
+          )}
+          {features.length === 0 && !isLoading && data && data.features.length === 0 && (
+            <div className="text-center py-10 space-y-3">
+              <CheckCircle className="size-10 mx-auto text-emerald-500/60" />
+              <div className="space-y-1">
+                <p className="text-sm text-emerald-400/80">
+                  All clear — no events reported
+                </p>
+                <p className="text-xs text-muted-foreground/70">
+                  No events have been recorded in the last 24 hours.
                 </p>
               </div>
             </div>

@@ -20,11 +20,11 @@ export function WelcomeBanner({ onDismiss }: WelcomeBannerProps) {
         <X className="h-3.5 w-3.5" />
       </button>
       <p className="font-medium text-foreground pr-5">
-        What&apos;s happening around the world, right now.
+        Real-time global situation monitor
       </p>
       <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-        Conflicts, disasters, health alerts, and more — collected from global
-        monitoring sources. Filter by category above or browse the feed below.
+        Filter by category above, or tap a situation to see details. Events
+        update in real time.
       </p>
     </div>
   );
