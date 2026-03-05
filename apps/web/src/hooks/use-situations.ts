@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SituationWithCoords } from "@travelrisk/db";
 import { fetchSituations } from "@/lib/api-client";
 
@@ -27,7 +27,7 @@ export function useSituations(options: UseSituationsOptions): UseSituationsRetur
   const fetchIdRef = useRef(0);
   const hasUsedInitialData = useRef(!!initialData);
 
-  const doFetch = useCallback(() => {
+  const doFetch = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -66,7 +66,7 @@ export function useSituations(options: UseSituationsOptions): UseSituationsRetur
           setIsLoading(false);
         }
       });
-  }, [categories, minSeverity, after]);
+  };
 
   useEffect(() => {
     if (hasUsedInitialData.current) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NormalizedEventSchema, type NormalizedEvent } from "@travelrisk/shared";
 import { SSE_CONFIG } from "@/lib/constants";
 
@@ -30,7 +30,7 @@ export function useEventStream(): UseEventStreamReturn {
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const cleanup = useCallback(() => {
+  const cleanup = () => {
     if (reconnectTimerRef.current) {
       clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = null;
@@ -40,9 +40,9 @@ export function useEventStream(): UseEventStreamReturn {
       eventSourceRef.current = null;
     }
     setIsConnected(false);
-  }, []);
+  };
 
-  const connect = useCallback(() => {
+  const connect = () => {
     cleanup();
 
     if (retryCountRef.current >= SSE_CONFIG.maxRetries) {
@@ -90,7 +90,7 @@ export function useEventStream(): UseEventStreamReturn {
         }, delay);
       }
     };
-  }, [cleanup]);
+  };
 
   useEffect(() => {
     connect();

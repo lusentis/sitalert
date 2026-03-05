@@ -8,7 +8,6 @@ import {
   parseAsStringLiteral,
   useQueryStates,
 } from "nuqs";
-import { useCallback, useMemo } from "react";
 import { timeRangeToDate } from "@travelrisk/shared";
 
 const FEED_TABS = ["situations", "events"] as const;
@@ -30,55 +29,37 @@ const filtersOptions = {
 export function useFilters() {
   const [filters, setFilters] = useQueryStates(filtersParsers, filtersOptions);
 
-  const toggleCategory = useCallback(
-    (category: string) => {
-      setFilters((prev) => {
-        const current = prev.categories;
-        const next = current.includes(category)
-          ? current.filter((c) => c !== category)
-          : [...current, category];
-        return { ...prev, categories: next };
-      });
-    },
-    [setFilters],
-  );
+  const toggleCategory = (category: string) => {
+    setFilters((prev) => {
+      const current = prev.categories;
+      const next = current.includes(category)
+        ? current.filter((c) => c !== category)
+        : [...current, category];
+      return { ...prev, categories: next };
+    });
+  };
 
-  const setMinSeverity = useCallback(
-    (value: number) => {
-      setFilters((prev) => ({ ...prev, minSeverity: value }));
-    },
-    [setFilters],
-  );
+  const setMinSeverity = (value: number) => {
+    setFilters((prev) => ({ ...prev, minSeverity: value }));
+  };
 
-  const setCategories = useCallback(
-    (categories: string[]) => {
-      setFilters((prev) => ({ ...prev, categories }));
-    },
-    [setFilters],
-  );
+  const setCategories = (categories: string[]) => {
+    setFilters((prev) => ({ ...prev, categories }));
+  };
 
-  const setSearch = useCallback(
-    (q: string) => {
-      setFilters((prev) => ({ ...prev, q }));
-    },
-    [setFilters],
-  );
+  const setSearch = (q: string) => {
+    setFilters((prev) => ({ ...prev, q }));
+  };
 
-  const setTab = useCallback(
-    (tab: FeedTab) => {
-      setFilters((prev) => ({ ...prev, tab }));
-    },
-    [setFilters],
-  );
+  const setTab = (tab: FeedTab) => {
+    setFilters((prev) => ({ ...prev, tab }));
+  };
 
-  const toggleAdvisories = useCallback(() => {
+  const toggleAdvisories = () => {
     setFilters((prev) => ({ ...prev, advisories: !prev.advisories }));
-  }, [setFilters]);
+  };
 
-  const after = useMemo(
-    () => timeRangeToDate("24h").toISOString(),
-    [],
-  );
+  const after = timeRangeToDate("24h").toISOString();
 
   return {
     ...filters,

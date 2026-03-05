@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Map, useMap, type MapRef, type MapViewport } from "@/components/ui/map";
 import { ChoroplethLayer } from "./choropleth-layer";
 import { EventLayer } from "./event-layer";
@@ -64,50 +64,41 @@ export function MapView({
   const [stackedFeatures, setStackedFeatures] = useState<GeoJSONFeature[]>([]);
   const [stackIndex, setStackIndex] = useState(0);
 
-  const handleViewportChange = useCallback(
-    (_viewport: MapViewport) => {
-      const mapInstance = mapRef.current;
-      if (!mapInstance) return;
+  const handleViewportChange = (_viewport: MapViewport) => {
+    const mapInstance = mapRef.current;
+    if (!mapInstance) return;
 
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
 
-      debounceTimerRef.current = setTimeout(() => {
-        const bounds = mapInstance.getBounds();
-        onBoundsChange({
-          west: bounds.getWest(),
-          south: bounds.getSouth(),
-          east: bounds.getEast(),
-          north: bounds.getNorth(),
-        });
-      }, VIEWPORT_DEBOUNCE_MS);
-    },
-    [onBoundsChange],
-  );
+    debounceTimerRef.current = setTimeout(() => {
+      const bounds = mapInstance.getBounds();
+      onBoundsChange({
+        west: bounds.getWest(),
+        south: bounds.getSouth(),
+        east: bounds.getEast(),
+        north: bounds.getNorth(),
+      });
+    }, VIEWPORT_DEBOUNCE_MS);
+  };
 
-  const handleEventClick = useCallback(
-    (features: GeoJSONFeature[]) => {
-      setStackedFeatures(features);
-      setStackIndex(0);
-      onEventSelect?.(features[0]);
-    },
-    [onEventSelect],
-  );
+  const handleEventClick = (features: GeoJSONFeature[]) => {
+    setStackedFeatures(features);
+    setStackIndex(0);
+    onEventSelect?.(features[0]);
+  };
 
-  const handleDeselect = useCallback(() => {
+  const handleDeselect = () => {
     setStackedFeatures([]);
     setStackIndex(0);
     onDeselectEvent?.();
-  }, [onDeselectEvent]);
+  };
 
-  const handleStackNavigate = useCallback(
-    (index: number) => {
-      setStackIndex(index);
-      onEventSelect?.(stackedFeatures[index]);
-    },
-    [stackedFeatures, onEventSelect],
-  );
+  const handleStackNavigate = (index: number) => {
+    setStackIndex(index);
+    onEventSelect?.(stackedFeatures[index]);
+  };
 
   // Fly to the selected event (triggered by both map clicks and sidebar clicks)
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SituationWithCoords } from "@travelrisk/db";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,7 +38,7 @@ export function SituationFeed({
     }
   };
 
-  const items = useMemo(() => {
+  const items = (() => {
     const sorted = (situations ?? []).slice().sort(
       (a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime(),
     );
@@ -50,7 +50,7 @@ export function SituationFeed({
         (s.summary?.toLowerCase().includes(q) ?? false) ||
         (s.countryCodes?.some((c) => c.toLowerCase().includes(q)) ?? false),
     );
-  }, [situations, searchQuery]);
+  })();
 
   // Restore situation from deep link on initial data load
   const restoredRef = useRef(false);

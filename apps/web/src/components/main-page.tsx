@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import type { GeoJSONFeature, GeoJSONFeatureCollection, Advisory, SituationWithCoords } from "@travelrisk/db";
 import { useFilters } from "@/hooks/use-filters";
 import { useMapEvents } from "@/hooks/use-map-events";
@@ -52,63 +52,56 @@ export function MainPage({ onboardingDismissed, advisories, initialEvents, initi
     }
   }, [lastEvent, refetch, refetchSituations]);
 
-  const countryScores = useMemo(
-    () => buildAdvisoryScores(advisories),
-    [advisories],
-  );
+  const countryScores = buildAdvisoryScores(advisories);
 
-  const handleCountryClick = useCallback(
-    (countryCode: string, lngLat: { lng: number; lat: number }) => {
-      const advisory = advisories.find(
-        (a) => a.countryCode.toUpperCase() === countryCode,
-      );
-      if (advisory) {
-        deepLink.selectAdvisory(countryCode, lngLat);
-      }
-    },
-    [advisories, deepLink],
-  );
+  const handleCountryClick = (countryCode: string, lngLat: { lng: number; lat: number }) => {
+    const advisory = advisories.find(
+      (a) => a.countryCode.toUpperCase() === countryCode,
+    );
+    if (advisory) {
+      deepLink.selectAdvisory(countryCode, lngLat);
+    }
+  };
 
   // Derive category counts from situations so they match sidebar items
-  const categoryCounts = useMemo(() => {
-    if (!situations) return undefined;
-    const counts: Record<string, number> = {};
+  let categoryCounts: Record<string, number> | undefined;
+  if (situations) {
+    categoryCounts = {};
     for (const s of situations) {
-      counts[s.category] = (counts[s.category] ?? 0) + 1;
+      categoryCounts[s.category] = (categoryCounts[s.category] ?? 0) + 1;
     }
-    return counts;
-  }, [situations]);
+  }
 
-  const handleBoundsChange = useCallback(() => {
+  const handleBoundsChange = () => {
     // Bounds tracked by MapView internally; kept for MapInitializer trigger
-  }, []);
+  };
 
   // Derive selectedEvent from URL eventId + fetched data
-  const selectedEvent = useMemo<GeoJSONFeature | null>(() => {
-    if (!deepLink.eventId || !data) return null;
-    return data.features.find((f) => f.properties.id === deepLink.eventId) ?? null;
-  }, [deepLink.eventId, data]);
+  const selectedEvent: GeoJSONFeature | null =
+    deepLink.eventId && data
+      ? data.features.find((f) => f.properties.id === deepLink.eventId) ?? null
+      : null;
 
   // Derive selectedAdvisory from URL advisoryCode + fetched advisories
-  const selectedAdvisory = useMemo(() => {
+  const selectedAdvisory = (() => {
     if (!deepLink.advisoryCode || !deepLink.advisoryLngLat) return null;
     const advisory = advisories.find(
       (a) => a.countryCode.toUpperCase() === deepLink.advisoryCode?.toUpperCase(),
     );
     if (!advisory) return null;
     return { advisory, lngLat: deepLink.advisoryLngLat };
-  }, [deepLink.advisoryCode, deepLink.advisoryLngLat, advisories]);
+  })();
 
-  const handleEventSelect = useCallback((feature: GeoJSONFeature) => {
+  const handleEventSelect = (feature: GeoJSONFeature) => {
     deepLink.selectEvent(feature.properties.id);
-  }, [deepLink]);
+  };
 
-  const handleDeselectEvent = useCallback(() => {
+  const handleDeselectEvent = () => {
     deepLink.selectEvent(null);
-  }, [deepLink]);
+  };
 
   // Filter map events by debounced search query
-  const filteredMapData = useMemo(() => {
+  const filteredMapData = (() => {
     if (!data || !debouncedSearch.trim()) return data;
     const q = debouncedSearch.toLowerCase();
     return {
@@ -121,15 +114,15 @@ export function MainPage({ onboardingDismissed, advisories, initialEvents, initi
           (f.properties.countryCodes?.some((c: string) => c.toLowerCase().includes(q)) ?? false),
       ),
     };
-  }, [data, debouncedSearch]);
+  })();
 
   // Combine errors for display
   const error = eventsError ?? situationsError;
 
-  const handleRetry = useCallback(() => {
+  const handleRetry = () => {
     refetch();
     refetchSituations();
-  }, [refetch, refetchSituations]);
+  };
 
   return (
     <TooltipProvider delayDuration={400}>

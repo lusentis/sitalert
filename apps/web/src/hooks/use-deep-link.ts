@@ -1,7 +1,6 @@
 "use client";
 
 import { parseAsFloat, parseAsString, useQueryStates } from "nuqs";
-import { useCallback } from "react";
 
 const deepLinkParsers = {
   situation: parseAsString,
@@ -16,46 +15,37 @@ const options = { shallow: true } as const;
 export function useDeepLink() {
   const [state, setState] = useQueryStates(deepLinkParsers, options);
 
-  const selectSituation = useCallback(
-    (id: string | null) => {
-      setState({
-        situation: id,
-        event: null,
-        advisory: null,
-        alat: null,
-        alng: null,
-      });
-    },
-    [setState],
-  );
+  const selectSituation = (id: string | null) => {
+    setState({
+      situation: id,
+      event: null,
+      advisory: null,
+      alat: null,
+      alng: null,
+    });
+  };
 
-  const selectEvent = useCallback(
-    (id: string | null) => {
-      setState({
-        situation: id ? null : state.situation,
-        event: id,
-        advisory: id ? null : state.advisory,
-        alat: id ? null : state.alat,
-        alng: id ? null : state.alng,
-      });
-    },
-    [setState, state.situation, state.advisory, state.alat, state.alng],
-  );
+  const selectEvent = (id: string | null) => {
+    setState({
+      situation: id ? null : state.situation,
+      event: id,
+      advisory: id ? null : state.advisory,
+      alat: id ? null : state.alat,
+      alng: id ? null : state.alng,
+    });
+  };
 
-  const selectAdvisory = useCallback(
-    (countryCode: string | null, lngLat?: { lng: number; lat: number }) => {
-      setState({
-        situation: null,
-        event: null,
-        advisory: countryCode,
-        alat: lngLat?.lat ?? null,
-        alng: lngLat?.lng ?? null,
-      });
-    },
-    [setState],
-  );
+  const selectAdvisory = (countryCode: string | null, lngLat?: { lng: number; lat: number }) => {
+    setState({
+      situation: null,
+      event: null,
+      advisory: countryCode,
+      alat: lngLat?.lat ?? null,
+      alng: lngLat?.lng ?? null,
+    });
+  };
 
-  const clear = useCallback(() => {
+  const clear = () => {
     setState({
       situation: null,
       event: null,
@@ -63,7 +53,7 @@ export function useDeepLink() {
       alat: null,
       alng: null,
     });
-  }, [setState]);
+  };
 
   return {
     situationId: state.situation,

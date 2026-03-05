@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { useMap } from "@/components/ui/map";
 import type { GeoJSONFeatureCollection, GeoJSONFeature } from "@travelrisk/db";
 import { CATEGORY_COLORS } from "@travelrisk/shared";
@@ -90,7 +90,7 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
   });
   onEventClickRef.current = onEventClick;
 
-  const setupLayers = useCallback(() => {
+  const setupLayers = () => {
     if (!map || layersAddedRef.current) return;
 
     map.addSource(SOURCE_ID, {
@@ -141,7 +141,7 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
     });
 
     layersAddedRef.current = true;
-  }, [map, data]);
+  };
 
   useEffect(() => {
     if (!map || !isLoaded) return;

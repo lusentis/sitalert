@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { GeoJSONFeatureCollection, GeoJSONFeature } from "@travelrisk/db";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,7 +28,7 @@ export function EventFeed({
 }: EventFeedProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const features = useMemo(() => {
+  const features = (() => {
     if (!data) return [];
 
     const featureList = [...data.features];
@@ -84,7 +84,7 @@ export function EventFeed({
         (f.properties.locationName?.toLowerCase().includes(q) ?? false) ||
         (f.properties.countryCodes?.some((c: string) => c.toLowerCase().includes(q)) ?? false),
     );
-  }, [data, lastStreamEvent, searchQuery]);
+  })();
 
   // Scroll selected card into view
   useEffect(() => {

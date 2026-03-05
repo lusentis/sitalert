@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { GeoJSONFeatureCollection } from "@travelrisk/db";
 import { fetchEventsGeoJSON } from "@/lib/api-client";
 
@@ -39,7 +39,7 @@ export function useMapEvents(options: UseMapEventsOptions): UseMapEventsReturn {
   const fetchIdRef = useRef(0);
   const hasUsedInitialData = useRef(!!initialData);
 
-  const doFetch = useCallback(() => {
+  const doFetch = () => {
     // Cancel any in-flight request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -79,7 +79,7 @@ export function useMapEvents(options: UseMapEventsOptions): UseMapEventsReturn {
           setIsLoading(false);
         }
       });
-  }, [categories, minSeverity, after]);
+  };
 
   // Fetch when filters change (skip first if we have server-provided data)
   useEffect(() => {
