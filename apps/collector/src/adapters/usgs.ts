@@ -63,7 +63,7 @@ export class UsgsAdapter extends BaseAdapter {
 
     for (const feature of data.features) {
       if (await seen.has(feature.id)) continue;
-      if (feature.properties.mag < 5) continue;
+      if (feature.properties.mag < 6) continue;
       await seen.add(feature.id);
 
       const [lng, lat] = feature.geometry.coordinates;

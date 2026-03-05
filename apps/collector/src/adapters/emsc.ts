@@ -57,7 +57,7 @@ export class EmscAdapter extends BaseAdapter {
       const { unid, lat, lon, mag, flynn_region, time } = feature.properties;
 
       if (await seen.has(unid)) continue;
-      if (mag < 5) continue;
+      if (mag < 6) continue;
       await seen.add(unid);
 
       const severity = magnitudeToSeverity(mag);

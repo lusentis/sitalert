@@ -59,7 +59,7 @@ export class GeoNetNzAdapter extends BaseAdapter {
         feature.properties;
 
       if (await seen.has(publicID)) continue;
-      if (magnitude < 5) continue;
+      if (magnitude < 6) continue;
       await seen.add(publicID);
 
       const [lng, lat] = feature.geometry.coordinates;
