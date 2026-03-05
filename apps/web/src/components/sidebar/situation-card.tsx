@@ -10,7 +10,7 @@ import {
 import { SeverityBadge } from "@/components/common/severity-badge";
 import { CATEGORY_ICONS } from "@/lib/category-icons";
 import { cn } from "@/lib/utils";
-import { MapPin, Layers, RadioTower } from "lucide-react";
+import { MapPin, Layers } from "lucide-react";
 import { formatCountryCodes } from "@/lib/country-codes";
 
 interface SituationCardProps {
@@ -68,16 +68,11 @@ export function SituationCard({ situation, onClick, isSelected }: SituationCardP
               <Layers className="h-3 w-3" />
               {situation.eventCount}
             </span>
-            {situation.lastEventAt ? (
-              <span className="text-xs text-muted-foreground">
-                {formatRelativeTime(String(situation.lastEventAt))}
-              </span>
-            ) : (
-              <span className="flex items-center gap-0.5 text-xs text-amber-500/80">
-                <RadioTower className="h-3 w-3" />
-                Low coverage
-              </span>
-            )}
+            <span className="text-xs text-muted-foreground/70">
+              {situation.lastEventAt
+                ? formatRelativeTime(String(situation.lastEventAt))
+                : "No events yet"}
+            </span>
           </div>
         </div>
       </div>
