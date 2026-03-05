@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { GeoJSONFeature } from "@travelrisk/db";
+import { useCallback, useEffect, useMemo } from "react";
+import type { GeoJSONFeature, Advisory } from "@travelrisk/db";
 import { useFilters } from "@/hooks/use-filters";
 import { useMapEvents } from "@/hooks/use-map-events";
 import { useSituations } from "@/hooks/use-situations";
@@ -13,15 +13,15 @@ import { MapLegend } from "@/components/map/map-legend";
 import { ChoroplethToggle } from "@/components/map/choropleth-toggle";
 import { AdvisoryPopup } from "@/components/map/advisory-popup";
 import { buildAdvisoryScores } from "@/lib/compute-country-risk";
-import { fetchAdvisories, type AdvisoryData } from "@/lib/api-client";
 import { Sidebar } from "@/components/sidebar/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 interface MainPageProps {
   onboardingDismissed: boolean;
+  advisories: Advisory[];
 }
 
-export function MainPage({ onboardingDismissed }: MainPageProps) {
+export function MainPage({ onboardingDismissed, advisories }: MainPageProps) {
   const filters = useFilters();
   const deepLink = useDeepLink();
   const debouncedSearch = useDebouncedValue(filters.q, 1500);
@@ -39,20 +39,6 @@ export function MainPage({ onboardingDismissed }: MainPageProps) {
   });
 
   const { lastEvent, isConnected } = useEventStream();
-
-  const [advisories, setAdvisories] = useState<AdvisoryData[]>([]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchAdvisories(controller.signal)
-      .then(setAdvisories)
-      .catch((err) => {
-        if (err instanceof Error && err.name !== "AbortError") {
-          console.error("Failed to fetch advisories:", err.message);
-        }
-      });
-    return () => controller.abort();
-  }, []);
 
   // Refetch when a new SSE event arrives
   useEffect(() => {

@@ -4,8 +4,8 @@ import { buildAdvisoryScores, advisoryColor, ADVISORY_LEVELS } from "./compute-c
 describe("buildAdvisoryScores", () => {
   it("builds map from advisory data", () => {
     const advisories = [
-      { countryCode: "SY", level: 4, title: "", summary: "", sourceUrl: "", sourceName: "", updatedAt: "" },
-      { countryCode: "FR", level: 1, title: "", summary: "", sourceUrl: "", sourceName: "", updatedAt: "" },
+      { countryCode: "SY", level: 4, title: "", summary: "", sourceUrl: "", sourceName: "", updatedAt: new Date() },
+      { countryCode: "FR", level: 1, title: "", summary: "", sourceUrl: "", sourceName: "", updatedAt: new Date() },
     ];
     const scores = buildAdvisoryScores(advisories);
     expect(scores.get("SY")).toBe(4);
@@ -15,7 +15,7 @@ describe("buildAdvisoryScores", () => {
 
   it("uppercases country codes", () => {
     const advisories = [
-      { countryCode: "sy", level: 4, title: "", summary: "", sourceUrl: "", sourceName: "", updatedAt: "" },
+      { countryCode: "sy", level: 4, title: "", summary: "", sourceUrl: "", sourceName: "", updatedAt: new Date() },
     ];
     const scores = buildAdvisoryScores(advisories);
     expect(scores.get("SY")).toBe(4);

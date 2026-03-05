@@ -2,10 +2,10 @@
 
 import { MapPopup } from "@/components/ui/map";
 import { X, ExternalLink, ShieldAlert } from "lucide-react";
-import type { AdvisoryData } from "@/lib/api-client";
+import type { Advisory } from "@travelrisk/db";
 
 interface AdvisoryPopupProps {
-  advisory: AdvisoryData;
+  advisory: Advisory;
   lngLat: { lng: number; lat: number };
   onClose: () => void;
 }

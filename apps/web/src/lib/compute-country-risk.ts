@@ -1,11 +1,11 @@
-import type { AdvisoryData } from "./api-client";
+import type { Advisory } from "@travelrisk/db";
 
 /**
  * Build a Map of country code -> advisory level from advisory data.
  * Used by ChoroplethLayer to color countries.
  */
 export function buildAdvisoryScores(
-  advisories: AdvisoryData[],
+  advisories: Advisory[],
 ): Map<string, number> {
   const scores = new Map<string, number>();
   for (const a of advisories) {

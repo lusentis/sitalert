@@ -5,6 +5,8 @@ export {
   situations,
   type Situation,
   type NewSituation,
+  advisories,
+  type Advisory,
 } from "./schema";
 export { geographyPoint } from "./custom-types";
 export {

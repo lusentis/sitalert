@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import { cookies } from "next/headers";
+import { createHttpClient } from "@travelrisk/db/client";
+import { queryAllAdvisories } from "@travelrisk/db/queries";
 import { MainPage } from "@/components/main-page";
 
 function LoadingFallback() {
@@ -23,13 +25,32 @@ function LoadingFallback() {
   );
 }
 
+async function fetchAdvisories() {
+  const databaseUrl = process.env["DATABASE_URL"];
+  if (!databaseUrl) return [];
+
+  try {
+    const db = createHttpClient(databaseUrl);
+    return await queryAllAdvisories(db);
+  } catch (err) {
+    console.error("Failed to fetch advisories:", err instanceof Error ? err.message : err);
+    return [];
+  }
+}
+
 export default async function Home() {
-  const cookieStore = await cookies();
+  const [cookieStore, advisories] = await Promise.all([
+    cookies(),
+    fetchAdvisories(),
+  ]);
   const onboardingDismissed = cookieStore.get("travelrisk-onboarding")?.value === "1";
 
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <MainPage onboardingDismissed={onboardingDismissed} />
+      <MainPage
+        onboardingDismissed={onboardingDismissed}
+        advisories={advisories}
+      />
     </Suspense>
   );
 }

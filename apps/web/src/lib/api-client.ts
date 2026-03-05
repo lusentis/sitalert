@@ -122,26 +122,3 @@ export async function fetchSituationEvents(
   const json = await response.json();
   return json.data as SituationEvent[];
 }
-
-export interface AdvisoryData {
-  countryCode: string;
-  level: number;
-  title: string;
-  summary: string;
-  sourceUrl: string;
-  sourceName: string;
-  updatedAt: string;
-}
-
-export async function fetchAdvisories(
-  signal?: AbortSignal,
-): Promise<AdvisoryData[]> {
-  const response = await fetch("/api/advisories", { signal });
-
-  if (!response.ok) {
-    throw new Error(userFacingError(response));
-  }
-
-  const json = await response.json();
-  return json.data as AdvisoryData[];
-}
