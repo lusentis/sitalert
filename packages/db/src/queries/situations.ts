@@ -320,12 +320,7 @@ export async function querySituationsForFeed(
     .from(situations)
     .where(and(...conditions))
     .orderBy(
-      // Sort situations with events before empty ones (unless they're external/curated)
-      sql`CASE
-        WHEN ${situations.eventCount} > 0 THEN 0
-        WHEN ${situations.externalId} IS NOT NULL THEN 0
-        ELSE 1
-      END`,
+      desc(situations.severity),
       sql`COALESCE((
         SELECT MAX(${events.timestamp})
         FROM ${events}

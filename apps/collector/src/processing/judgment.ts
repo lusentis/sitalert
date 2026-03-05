@@ -16,7 +16,7 @@ export const judgmentSchema = z.object({
     .describe("ID of existing situation this belongs to, or null"),
   newSituation: z
     .object({
-      title: z.string().max(120).describe("Short name for the ongoing situation"),
+      title: z.string().max(120).describe("Specific descriptive title — MUST describe what is happening, NEVER just 'Country Category' like 'Peru Earthquake'"),
       summary: z
         .string()
         .max(500)
@@ -25,6 +25,11 @@ export const judgmentSchema = z.object({
     .nullable()
     .describe(
       "If this event starts a new situation, provide title and summary. Otherwise null.",
+    ),
+  standalone: z
+    .boolean()
+    .describe(
+      "True if this event should exist without a situation (isolated, low-severity). False otherwise.",
     ),
 });
 
@@ -71,21 +76,39 @@ Given a new event and lists of candidate duplicates and active situations, decid
    - Same country + same category + same root cause = same situation.
    - If in doubt, assign to the broader existing situation rather than creating a new one.
 
-3. **New situation** (LAST RESORT): Only create a new situation if NO existing situation covers this event's root cause.
-   - Use descriptive titles that name the core dynamic, not just a country:
-     e.g., "US-led air campaign against Iranian military targets",
-     "Houthi attacks on Gulf shipping and energy infrastructure",
-     "NATO naval deployments in Eastern Mediterranean"
-   - Include the primary countries/region and the key event type
-   - Do NOT include dates or version numbers
+3. **Standalone event** (for low-impact one-offs): If this is an isolated, low-severity (1-3) event that doesn't belong to any existing situation and isn't significant enough to create one, set standalone=true.
+   - Examples: a single transport disruption, a minor weather advisory, an isolated security alert, a small protest.
+   - These events exist on the map without a parent situation.
+   - Do NOT use standalone for high-severity (4-5) events — those always need a situation.
+
+4. **New situation** (LAST RESORT): Only create a new situation if NO existing situation covers this event's root cause AND the event is significant enough (severity 4-5, or a clearly distinct emerging crisis).
+
+   ## Title rules (CRITICAL — follow exactly)
+   NEVER use generic "Country + Category" titles. These are BANNED patterns:
+   - "Turkmenistan Conflict" — BANNED (says nothing about what's happening)
+   - "Azerbaijan Terrorism" — BANNED (meaningless label)
+   - "Argentina Weather Extreme" — BANNED (no specificity)
+   - "Country + Disaster/Crisis/Emergency" — BANNED (generic)
+
+   GOOD titles describe WHAT is actually happening:
+   - "Magnitude 6.2 earthquake in central Turkmenistan" — specific event
+   - "Baku metro bombing claimed by separatist group" — names the incident
+   - "Severe flooding across Buenos Aires province" — describes the actual situation
+   - "Houthi attacks on Gulf shipping and energy infrastructure" — names actors and targets
+   - "NATO naval deployments in Eastern Mediterranean" — describes the action
+
+   The title must answer "what is happening?" not just "where and what category?"
+   Include: the specific event/action, who is involved, and where.
+   Do NOT include dates or version numbers.
 
 RULES:
-- EVERY event MUST result in exactly one action: duplicate, assign to situation, or create new situation.
-- duplicateOf, situationId, and newSituation are MUTUALLY EXCLUSIVE — set exactly ONE.
+- EVERY event MUST result in exactly one action: duplicate, assign to situation, standalone, or create new situation.
+- duplicateOf, situationId, standalone, and newSituation are MUTUALLY EXCLUSIVE — set exactly ONE non-null/true value. All others must be null/false.
 - ALWAYS check for duplicates FIRST before considering situation assignment.
-- If the event is a duplicate, set ONLY duplicateOf.
-- If assigning to an existing situation, set ONLY situationId.
-- ONLY create a new situation if no existing situation matches. Never leave all fields null.`;
+- If the event is a duplicate, set ONLY duplicateOf (standalone=false).
+- If assigning to an existing situation, set ONLY situationId (standalone=false).
+- If standalone, set standalone=true and leave duplicateOf=null, situationId=null, newSituation=null.
+- ONLY create a new situation if no existing situation matches AND the event warrants one.`;
 
 const openai = createOpenAI();
 // const groq = createGroq();
@@ -168,7 +191,7 @@ Analyze the new event against the candidates and situations above.`;
         "[judgment] LLM judgment error:",
         err instanceof Error ? err.message : err,
       );
-      return { duplicateOf: null, situationId: null, newSituation: null };
+      return { duplicateOf: null, situationId: null, newSituation: null, standalone: true };
     }
   }
 }

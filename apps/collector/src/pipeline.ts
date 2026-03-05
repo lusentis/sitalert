@@ -267,7 +267,7 @@ export class Pipeline {
       candidates,
       activeSituations,
     );
-    console.log(`${tag} llm=${elapsed(tLlm)} decision=${judgment.duplicateOf ? "duplicate" : judgment.situationId ? "existing" : judgment.newSituation ? "new" : "fallback"}`);
+    console.log(`${tag} llm=${elapsed(tLlm)} decision=${judgment.duplicateOf ? "duplicate" : judgment.situationId ? "existing" : judgment.standalone ? "standalone" : judgment.newSituation ? "new" : "fallback"}`);
 
     // Handle duplicate
     if (judgment.duplicateOf) {
@@ -317,6 +317,18 @@ export class Pipeline {
       console.warn(`[pipeline] Judgment returned unknown situationId="${judgment.situationId}", will auto-create situation`);
     }
 
+    // Handle standalone event (no situation needed)
+    if (judgment.standalone) {
+      const event = await insertEvent(this.db, {
+        title, summary, category, severity, confidence,
+        location: "", lat, lng, locationName,
+        countryCodes, timestamp, sources, media, rawText,
+        situationId: undefined,
+      });
+      console.log(`[pipeline] Inserted standalone event ${event.id}`);
+      return { event, lat, lng };
+    }
+
     // Handle new situation creation
     if (judgment.newSituation) {
       const situation = await createSituation(this.db, {
@@ -338,23 +350,14 @@ export class Pipeline {
       return { event, lat, lng };
     }
 
-    // Fallback: LLM returned all-null or hallucinated IDs — auto-create situation
-    const fallbackSituation = await createSituation(this.db, {
-      title,
-      summary,
-      category,
-      severity,
-      countryCodes,
-      lat,
-      lng,
-    });
+    // Fallback: LLM returned all-null or hallucinated IDs — insert as standalone
     const event = await insertEvent(this.db, {
       title, summary, category, severity, confidence,
       location: "", lat, lng, locationName,
       countryCodes, timestamp, sources, media, rawText,
-      situationId: fallbackSituation.id,
+      situationId: undefined,
     });
-    console.log(`[pipeline] Auto-created situation ${fallbackSituation.id} for event ${event.id}`);
+    console.log(`[pipeline] Fallback: inserted standalone event ${event.id}`);
     return { event, lat, lng };
   }
 

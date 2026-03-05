@@ -65,6 +65,19 @@ IMPORTANT rules for title and summary:
 
 Be conservative with severity — only use 4-5 for events with major impact.
 
+## Severity guidelines
+
+- severity=1: Minor/localized, low-impact. Includes vague/unconfirmed threats, precautionary alerts,
+  scheduled disruptions, minor protests.
+- severity=2: Moderate, confirmed but contained. Single incidents with limited area impact.
+- severity=3: Significant, affects a city or region. Confirmed and ongoing.
+- severity=4: Severe, affects a country or multiple regions. Major disruption.
+- severity=5: Catastrophic, mass casualties or multi-country impact.
+
+Vague or unconfirmed threats (e.g., "threat reported at X", "security alert at Y" with no
+confirmed incident) should be severity=1 at most. If there's no confirmed action, no casualties,
+and no disruption, consider setting travelRelevant=false entirely.
+
 ## Travel relevance (travelRelevant)
 
 This app serves travelers and business travelers. Ask: "Would someone planning or currently

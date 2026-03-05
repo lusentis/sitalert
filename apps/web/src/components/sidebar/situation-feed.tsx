@@ -41,6 +41,9 @@ export function SituationFeed({
 
   const items = (() => {
     const sorted = (situations ?? []).slice().sort((a, b) => {
+      // Primary: severity DESC (highest first)
+      if (b.severity !== a.severity) return b.severity - a.severity;
+      // Secondary: most recent activity first
       const aTime = a.lastEventAt ? new Date(a.lastEventAt).getTime() : new Date(a.firstSeen).getTime();
       const bTime = b.lastEventAt ? new Date(b.lastEventAt).getTime() : new Date(b.firstSeen).getTime();
       return bTime - aTime;
