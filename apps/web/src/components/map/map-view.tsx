@@ -7,7 +7,7 @@ import { EventLayer } from "./event-layer";
 import { EventPopup } from "./event-popup";
 import type { GeoJSONFeatureCollection, GeoJSONFeature } from "@travelrisk/db";
 import type { BBox } from "@/hooks/use-map-events";
-import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, VIEWPORT_DEBOUNCE_MS } from "@/lib/constants";
+import { VIEWPORT_DEBOUNCE_MS } from "@/lib/constants";
 
 interface MapViewProps {
   data: GeoJSONFeatureCollection | null;
@@ -19,6 +19,9 @@ interface MapViewProps {
   choroplethVisible?: boolean;
   onCountryClick?: (countryCode: string, lngLat: { lng: number; lat: number }) => void;
   advisoryPopup?: React.ReactNode;
+  initialCenter?: [number, number];
+  initialZoom?: number;
+  onMoveEnd?: (center: [number, number], zoom: number) => void;
 }
 
 /** Inner component that fires initial bounds via useMap() */
@@ -56,6 +59,9 @@ export function MapView({
   choroplethVisible,
   onCountryClick,
   advisoryPopup,
+  initialCenter,
+  initialZoom,
+  onMoveEnd,
 }: MapViewProps) {
   const mapRef = useRef<MapRef>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -64,7 +70,7 @@ export function MapView({
   const [stackedFeatures, setStackedFeatures] = useState<GeoJSONFeature[]>([]);
   const [stackIndex, setStackIndex] = useState(0);
 
-  const handleViewportChange = (_viewport: MapViewport) => {
+  const handleViewportChange = (viewport: MapViewport) => {
     const mapInstance = mapRef.current;
     if (!mapInstance) return;
 
@@ -80,6 +86,7 @@ export function MapView({
         east: bounds.getEast(),
         north: bounds.getNorth(),
       });
+      onMoveEnd?.(viewport.center, viewport.zoom);
     }, VIEWPORT_DEBOUNCE_MS);
   };
 
@@ -136,8 +143,8 @@ export function MapView({
         ref={mapRef}
         className="h-full w-full"
         theme="dark"
-        center={MAP_DEFAULT_CENTER}
-        zoom={MAP_DEFAULT_ZOOM}
+        center={initialCenter}
+        zoom={initialZoom}
         onViewportChange={handleViewportChange}
       >
         <MapInitializer onBoundsChange={onBoundsChange} />

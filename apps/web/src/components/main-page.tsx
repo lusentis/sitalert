@@ -7,6 +7,7 @@ import { useMapEvents } from "@/hooks/use-map-events";
 import { useSituations } from "@/hooks/use-situations";
 import { useEventStream } from "@/hooks/use-event-stream";
 import { useDeepLink } from "@/hooks/use-deep-link";
+import { useMapViewport } from "@/hooks/use-map-viewport";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { MapView } from "@/components/map/map-view";
 import { MapLegend } from "@/components/map/map-legend";
@@ -25,6 +26,7 @@ interface MainPageProps {
 export function MainPage({ advisories, initialEvents, initialSituations }: MainPageProps) {
   const filters = useFilters();
   const deepLink = useDeepLink();
+  const mapViewport = useMapViewport();
   const debouncedSearch = useDebouncedValue(filters.q, 1500);
 
   const { data, isLoading: eventsLoading, error: eventsError, refetch } = useMapEvents({
@@ -155,6 +157,9 @@ export function MainPage({ advisories, initialEvents, initialSituations }: MainP
             choroplethScores={countryScores}
             choroplethVisible={filters.advisories}
             onCountryClick={filters.advisories ? handleCountryClick : undefined}
+            initialCenter={mapViewport.center}
+            initialZoom={mapViewport.zoom}
+            onMoveEnd={mapViewport.onMoveEnd}
             advisoryPopup={
               selectedAdvisory && filters.advisories ? (
                 <AdvisoryPopup
