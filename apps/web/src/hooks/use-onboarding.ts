@@ -1,23 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState, useTransition } from "react";
+import { dismissOnboarding } from "@/app/actions";
 
-const STORAGE_KEY = "travelrisk-onboarding-v1";
-
-export function useOnboardingDismissed() {
-  // Default to dismissed on SSR to prevent hydration flash
-  const [dismissed, setDismissed] = useState(true);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored !== "1") {
-      setDismissed(false);
-    }
-  }, []);
+export function useOnboardingDismissed(initialDismissed: boolean) {
+  const [dismissed, setDismissed] = useState(initialDismissed);
+  const [, startTransition] = useTransition();
 
   const dismiss = useCallback(() => {
-    localStorage.setItem(STORAGE_KEY, "1");
     setDismissed(true);
+    startTransition(() => {
+      dismissOnboarding();
+    });
   }, []);
 
   return { dismissed, dismiss };

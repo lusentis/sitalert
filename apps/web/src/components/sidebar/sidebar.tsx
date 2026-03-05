@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import type { SituationWithCoords } from "@travelrisk/db";
 import type { GeoJSONFeatureCollection, GeoJSONFeature } from "@travelrisk/db";
 import type { NormalizedEvent } from "@travelrisk/shared";
@@ -21,6 +20,7 @@ import { Activity, ChevronRight, AlertCircle } from "lucide-react";
 import { useOnboardingDismissed } from "@/hooks/use-onboarding";
 
 interface SidebarContentProps {
+  onboardingDismissed: boolean;
   filters: Filters;
   situations: SituationWithCoords[] | null;
   isLoading: boolean;
@@ -40,9 +40,8 @@ interface SidebarContentProps {
   onRetry?: () => void;
 }
 
-type FeedTab = "situations" | "events";
-
 function SidebarContent({
+  onboardingDismissed,
   filters,
   situations,
   isLoading,
@@ -61,8 +60,7 @@ function SidebarContent({
   onSearchChange,
   onRetry,
 }: SidebarContentProps) {
-  const { dismissed, dismiss } = useOnboardingDismissed();
-  const [activeTab, setActiveTab] = useState<FeedTab>("situations");
+  const { dismissed, dismiss } = useOnboardingDismissed(onboardingDismissed);
 
   return (
     <div className="flex flex-col h-full p-4 space-y-4 min-w-0">
@@ -135,9 +133,9 @@ function SidebarContent({
       {/* Feed tab toggle */}
       <div className="flex gap-1 bg-muted/50 rounded-md p-0.5">
         <button
-          onClick={() => setActiveTab("situations")}
+          onClick={() => filters.setTab("situations")}
           className={`flex-1 text-xs font-medium py-1.5 rounded transition-colors ${
-            activeTab === "situations"
+            filters.tab === "situations"
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           }`}
@@ -145,9 +143,9 @@ function SidebarContent({
           Situations
         </button>
         <button
-          onClick={() => setActiveTab("events")}
+          onClick={() => filters.setTab("events")}
           className={`flex-1 text-xs font-medium py-1.5 rounded transition-colors ${
-            activeTab === "events"
+            filters.tab === "events"
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           }`}
@@ -156,7 +154,7 @@ function SidebarContent({
         </button>
       </div>
 
-      {activeTab === "situations" ? (
+      {filters.tab === "situations" ? (
         <SituationFeed
           situations={situations}
           isLoading={isLoading}

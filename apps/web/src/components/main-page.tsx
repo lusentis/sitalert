@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { GeoJSONFeature } from "@travelrisk/db";
 import { useFilters } from "@/hooks/use-filters";
 import { useMapEvents } from "@/hooks/use-map-events";
@@ -17,14 +17,14 @@ import { fetchAdvisories, type AdvisoryData } from "@/lib/api-client";
 import { Sidebar } from "@/components/sidebar/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-export function MainPage() {
+interface MainPageProps {
+  onboardingDismissed: boolean;
+}
+
+export function MainPage({ onboardingDismissed }: MainPageProps) {
   const filters = useFilters();
   const deepLink = useDeepLink();
-  const [selectedEvent, setSelectedEvent] = useState<GeoJSONFeature | null>(
-    null,
-  );
-  const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearch = useDebouncedValue(searchQuery, 1500);
+  const debouncedSearch = useDebouncedValue(filters.q, 1500);
 
   const { data, isLoading: eventsLoading, error: eventsError, refetch } = useMapEvents({
     categories: filters.categories,
@@ -41,10 +41,6 @@ export function MainPage() {
   const { lastEvent, isConnected } = useEventStream();
 
   const [advisories, setAdvisories] = useState<AdvisoryData[]>([]);
-  const [selectedAdvisory, setSelectedAdvisory] = useState<{
-    advisory: AdvisoryData;
-    lngLat: { lng: number; lat: number };
-  } | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -66,16 +62,10 @@ export function MainPage() {
     }
   }, [lastEvent, refetch, refetchSituations]);
 
-  const [choroplethVisible, setChoroplethVisible] = useState(true);
-
   const countryScores = useMemo(
     () => buildAdvisoryScores(advisories),
     [advisories],
   );
-
-  const handleChoroplethToggle = useCallback(() => {
-    setChoroplethVisible((prev) => !prev);
-  }, []);
 
   const handleCountryClick = useCallback(
     (countryCode: string, lngLat: { lng: number; lat: number }) => {
@@ -83,9 +73,7 @@ export function MainPage() {
         (a) => a.countryCode.toUpperCase() === countryCode,
       );
       if (advisory) {
-        setSelectedAdvisory({ advisory, lngLat });
-        setSelectedEvent(null);
-        deepLink.clear();
+        deepLink.selectAdvisory(countryCode, lngLat);
       }
     },
     [advisories, deepLink],
@@ -105,29 +93,29 @@ export function MainPage() {
     // Bounds tracked by MapView internally; kept for MapInitializer trigger
   }, []);
 
+  // Derive selectedEvent from URL eventId + fetched data
+  const selectedEvent = useMemo<GeoJSONFeature | null>(() => {
+    if (!deepLink.eventId || !data) return null;
+    return data.features.find((f) => f.properties.id === deepLink.eventId) ?? null;
+  }, [deepLink.eventId, data]);
+
+  // Derive selectedAdvisory from URL advisoryCode + fetched advisories
+  const selectedAdvisory = useMemo(() => {
+    if (!deepLink.advisoryCode || !deepLink.advisoryLngLat) return null;
+    const advisory = advisories.find(
+      (a) => a.countryCode.toUpperCase() === deepLink.advisoryCode?.toUpperCase(),
+    );
+    if (!advisory) return null;
+    return { advisory, lngLat: deepLink.advisoryLngLat };
+  }, [deepLink.advisoryCode, deepLink.advisoryLngLat, advisories]);
+
   const handleEventSelect = useCallback((feature: GeoJSONFeature) => {
-    setSelectedEvent(feature);
-    setSelectedAdvisory(null);
     deepLink.selectEvent(feature.properties.id);
   }, [deepLink]);
 
   const handleDeselectEvent = useCallback(() => {
-    setSelectedEvent(null);
     deepLink.selectEvent(null);
   }, [deepLink]);
-
-  // Restore event from deep link on initial data load
-  const eventRestoredRef = useRef(false);
-  useEffect(() => {
-    if (eventRestoredRef.current || !deepLink.eventId || !data) return;
-    const feature = data.features.find(
-      (f) => f.properties.id === deepLink.eventId,
-    );
-    if (feature) {
-      setSelectedEvent(feature);
-      eventRestoredRef.current = true;
-    }
-  }, [deepLink.eventId, data]);
 
   // Filter map events by debounced search query
   const filteredMapData = useMemo(() => {
@@ -157,6 +145,7 @@ export function MainPage() {
     <TooltipProvider delayDuration={400}>
       <div className="flex h-screen w-screen overflow-hidden">
         <Sidebar
+          onboardingDismissed={onboardingDismissed}
           filters={filters}
           situations={situations}
           isLoading={situationsLoading}
@@ -171,9 +160,9 @@ export function MainPage() {
           selectedEventId={selectedEvent?.properties.id ?? null}
           deepLinkSituationId={deepLink.situationId}
           onSituationSelect={deepLink.selectSituation}
-          searchQuery={searchQuery}
+          searchQuery={filters.q}
           debouncedSearch={debouncedSearch}
-          onSearchChange={setSearchQuery}
+          onSearchChange={filters.setSearch}
         />
         <div className="relative flex-1">
           <MapView
@@ -183,23 +172,23 @@ export function MainPage() {
             selectedEvent={selectedEvent}
             onDeselectEvent={handleDeselectEvent}
             choroplethScores={countryScores}
-            choroplethVisible={choroplethVisible}
-            onCountryClick={choroplethVisible ? handleCountryClick : undefined}
+            choroplethVisible={filters.advisories}
+            onCountryClick={filters.advisories ? handleCountryClick : undefined}
             advisoryPopup={
-              selectedAdvisory && choroplethVisible ? (
+              selectedAdvisory && filters.advisories ? (
                 <AdvisoryPopup
                   advisory={selectedAdvisory.advisory}
                   lngLat={selectedAdvisory.lngLat}
-                  onClose={() => setSelectedAdvisory(null)}
+                  onClose={() => deepLink.selectAdvisory(null)}
                 />
               ) : null
             }
           />
           <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-2">
-            <MapLegend choroplethActive={choroplethVisible} />
+            <MapLegend choroplethActive={filters.advisories} />
             <ChoroplethToggle
-              active={choroplethVisible}
-              onToggle={handleChoroplethToggle}
+              active={filters.advisories}
+              onToggle={filters.toggleAdvisories}
             />
           </div>
         </div>

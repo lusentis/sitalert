@@ -2,16 +2,24 @@
 
 import {
   parseAsArrayOf,
+  parseAsBoolean,
   parseAsInteger,
   parseAsString,
+  parseAsStringLiteral,
   useQueryStates,
 } from "nuqs";
 import { useCallback, useMemo } from "react";
 import { timeRangeToDate } from "@travelrisk/shared";
 
+const FEED_TABS = ["situations", "events"] as const;
+export type FeedTab = (typeof FEED_TABS)[number];
+
 const filtersParsers = {
   categories: parseAsArrayOf(parseAsString).withDefault([]),
   minSeverity: parseAsInteger.withDefault(2),
+  q: parseAsString.withDefault(""),
+  tab: parseAsStringLiteral(FEED_TABS).withDefault("situations"),
+  advisories: parseAsBoolean.withDefault(true),
 };
 
 const filtersOptions = {
@@ -49,6 +57,24 @@ export function useFilters() {
     [setFilters],
   );
 
+  const setSearch = useCallback(
+    (q: string) => {
+      setFilters((prev) => ({ ...prev, q }));
+    },
+    [setFilters],
+  );
+
+  const setTab = useCallback(
+    (tab: FeedTab) => {
+      setFilters((prev) => ({ ...prev, tab }));
+    },
+    [setFilters],
+  );
+
+  const toggleAdvisories = useCallback(() => {
+    setFilters((prev) => ({ ...prev, advisories: !prev.advisories }));
+  }, [setFilters]);
+
   const after = useMemo(
     () => timeRangeToDate("24h").toISOString(),
     [],
@@ -60,6 +86,9 @@ export function useFilters() {
     toggleCategory,
     setCategories,
     setMinSeverity,
+    setSearch,
+    setTab,
+    toggleAdvisories,
   };
 }
 

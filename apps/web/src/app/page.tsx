@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import { MainPage } from "@/components/main-page";
 
 function LoadingFallback() {
@@ -22,10 +23,13 @@ function LoadingFallback() {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const cookieStore = await cookies();
+  const onboardingDismissed = cookieStore.get("travelrisk-onboarding")?.value === "1";
+
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <MainPage />
+      <MainPage onboardingDismissed={onboardingDismissed} />
     </Suspense>
   );
 }

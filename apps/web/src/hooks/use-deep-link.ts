@@ -1,46 +1,81 @@
 "use client";
 
-import { parseAsString, useQueryState } from "nuqs";
+import { parseAsFloat, parseAsString, useQueryStates } from "nuqs";
 import { useCallback } from "react";
+
+const deepLinkParsers = {
+  situation: parseAsString,
+  event: parseAsString,
+  advisory: parseAsString,
+  alat: parseAsFloat,
+  alng: parseAsFloat,
+};
 
 const options = { shallow: true } as const;
 
 export function useDeepLink() {
-  const [situationId, setSituationId] = useQueryState(
-    "situation",
-    parseAsString.withOptions(options),
-  );
-  const [eventId, setEventId] = useQueryState(
-    "event",
-    parseAsString.withOptions(options),
-  );
+  const [state, setState] = useQueryStates(deepLinkParsers, options);
 
   const selectSituation = useCallback(
     (id: string | null) => {
-      setSituationId(id);
-      if (id) setEventId(null);
+      setState({
+        situation: id,
+        event: null,
+        advisory: null,
+        alat: null,
+        alng: null,
+      });
     },
-    [setSituationId, setEventId],
+    [setState],
   );
 
   const selectEvent = useCallback(
     (id: string | null) => {
-      setEventId(id);
-      if (id) setSituationId(null);
+      setState({
+        situation: id ? null : state.situation,
+        event: id,
+        advisory: id ? null : state.advisory,
+        alat: id ? null : state.alat,
+        alng: id ? null : state.alng,
+      });
     },
-    [setEventId, setSituationId],
+    [setState, state.situation, state.advisory, state.alat, state.alng],
+  );
+
+  const selectAdvisory = useCallback(
+    (countryCode: string | null, lngLat?: { lng: number; lat: number }) => {
+      setState({
+        situation: null,
+        event: null,
+        advisory: countryCode,
+        alat: lngLat?.lat ?? null,
+        alng: lngLat?.lng ?? null,
+      });
+    },
+    [setState],
   );
 
   const clear = useCallback(() => {
-    setSituationId(null);
-    setEventId(null);
-  }, [setSituationId, setEventId]);
+    setState({
+      situation: null,
+      event: null,
+      advisory: null,
+      alat: null,
+      alng: null,
+    });
+  }, [setState]);
 
   return {
-    situationId,
-    eventId,
+    situationId: state.situation,
+    eventId: state.event,
+    advisoryCode: state.advisory,
+    advisoryLngLat:
+      state.advisory && state.alat != null && state.alng != null
+        ? { lng: state.alng, lat: state.alat }
+        : null,
     selectSituation,
     selectEvent,
+    selectAdvisory,
     clear,
   };
 }
