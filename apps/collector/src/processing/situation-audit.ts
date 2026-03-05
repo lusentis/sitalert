@@ -1,4 +1,4 @@
-import { generateObject } from "ai";
+import { generateObject, generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
 import type { PoolClient } from "@travelrisk/db";
@@ -11,6 +11,7 @@ import {
   clusterOrphanedEvents as dbClusterOrphans,
   queryActiveSituationsFlat,
   queryCoverageGaps,
+  queryEventTitlesByIds,
 } from "@travelrisk/db";
 import { withRetry } from "./retry";
 
@@ -39,8 +40,9 @@ export async function clusterOrphanedEvents(db: PoolClient): Promise<number> {
       });
       targetSituationId = matchingSituation.id;
     } else {
+      const title = await generateSituationTitle(db, eventIds, countryCode, category);
       const situation = await createSituation(db, {
-        title: `${countryCode} ${category.charAt(0).toUpperCase() + category.slice(1)}`,
+        title,
         summary: `Auto-created from ${eventIds.length} unassigned events`,
         category,
         severity: maxSeverity,
@@ -56,6 +58,36 @@ export async function clusterOrphanedEvents(db: PoolClient): Promise<number> {
   }
 
   return assigned;
+}
+
+async function generateSituationTitle(
+  db: PoolClient,
+  eventIds: string[],
+  countryCode: string,
+  category: string,
+): Promise<string> {
+  try {
+    const eventTitles = await queryEventTitlesByIds(db, eventIds);
+    if (eventTitles.length === 0) {
+      return `${countryCode} ${category.charAt(0).toUpperCase() + category.slice(1)}`;
+    }
+
+    const { text } = await withRetry(() =>
+      generateText({
+        model: openai("gpt-5-nano"),
+        system: `Generate a short, descriptive situation title (max 120 chars) that summarizes these related events. Include the country/region and the key event type. Do NOT include dates. Return ONLY the title, nothing else.`,
+        prompt: `Country: ${countryCode}\nCategory: ${category}\nEvent titles:\n${eventTitles.map((t) => `- ${t}`).join("\n")}`,
+      }),
+    );
+
+    return text.trim().slice(0, 120);
+  } catch (err: unknown) {
+    console.error(
+      "[situation-audit] Title generation failed:",
+      err instanceof Error ? err.message : err,
+    );
+    return `${countryCode} ${category.charAt(0).toUpperCase() + category.slice(1)}`;
+  }
 }
 
 // 3b. LLM-driven merge detection

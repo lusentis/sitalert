@@ -195,6 +195,20 @@ export async function upsertEvent(
   return upserted;
 }
 
+export async function queryEventTitlesByIds(
+  db: DbClient,
+  eventIds: string[],
+): Promise<string[]> {
+  if (eventIds.length === 0) return [];
+
+  const rows = await db
+    .select({ title: events.title })
+    .from(events)
+    .where(inArray(events.id, eventIds));
+
+  return rows.map((r) => r.title);
+}
+
 export async function findNearbyEvents(
   db: DbClient,
   lat: number,

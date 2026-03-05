@@ -154,17 +154,32 @@ export class Pipeline {
 
     if (!location) {
       const tGeo = performance.now();
-      // Try location mentions from classifier, then raw locationName
+
+      // Use LLM-provided country codes for geocode validation
+      const expectedCodes =
+        classification.expectedCountryCodes.length > 0
+          ? classification.expectedCountryCodes
+          : countryCodes.length > 0
+            ? countryCodes
+            : undefined;
+
+      // Try geocodableLocation first (LLM-disambiguated), then locationMentions, then raw name
       const locationCandidates = [
+        classification.geocodableLocation,
         ...classification.locationMentions,
         ...(locationName ? [locationName] : []),
       ];
 
       const collectedCodes = new Set<string>(countryCodes);
+      // Seed with LLM-provided codes
+      for (const code of classification.expectedCountryCodes) {
+        collectedCodes.add(code);
+      }
+
       let geocodeAttempts = 0;
       for (const candidate of locationCandidates) {
         geocodeAttempts++;
-        const geocoded = await this.geocoder.geocode(candidate);
+        const geocoded = await this.geocoder.geocode(candidate, expectedCodes);
         if (geocoded) {
           if (!location) {
             location = { lat: geocoded.lat, lng: geocoded.lng };

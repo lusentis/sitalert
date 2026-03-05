@@ -9,6 +9,9 @@ const classificationSchema = z.object({
   relevant: z
     .boolean()
     .describe("Is this a security/safety/disaster event worth tracking?"),
+  isAnalysis: z
+    .boolean()
+    .describe("True if this is opinion, analysis, or commentary rather than a discrete event"),
   category: z
     .enum(EVENT_CATEGORIES as unknown as [string, ...string[]])
     .describe("Event category"),
@@ -23,6 +26,19 @@ const classificationSchema = z.object({
   locationMentions: z
     .array(z.string())
     .describe("Place names mentioned in the text"),
+  geocodableLocation: z
+    .string()
+    .describe(
+      "Best geocoder-ready location string for this event. " +
+      "Format: 'City, Country' or 'Specific Place, Country'. " +
+      "Must be unambiguous and suitable for Nominatim forward geocoding.",
+    ),
+  expectedCountryCodes: z
+    .array(z.string())
+    .describe(
+      "ISO 3166-1 alpha-2 country codes (uppercase) for countries this event relates to. " +
+      "Used to validate geocoding results. E.g. ['IR'] for Iran, ['IL'] for Israel.",
+    ),
 });
 
 export type ClassificationResult = z.infer<typeof classificationSchema>;
@@ -45,7 +61,80 @@ IMPORTANT rules for title and summary:
   write "X: Y poses significant risk" or "Ongoing Y situation in X".
 
 Be conservative with severity — only use 4-5 for events with major impact.
-Ignore opinion pieces, scheduled events, advertisements, and general news.
+
+## What counts as analysis (isAnalysis=true)
+
+Set isAnalysis=true for content that is NOT a discrete, actionable event. This includes:
+- Opinion pieces, editorials, rhetorical questions ("Are Patriot missiles enough?")
+- Policy analysis, geopolitical commentary ("NATO Article 5 not triggered, alliance on high alert")
+- Diplomatic denials and statements with no concrete action ("Iran denies missile launch", "Italy: not at war")
+- Speculative or future-looking pieces ("Could X lead to Y?", "What if Z happens?")
+- Propaganda speeches and political rhetoric
+- Supply/strategy analysis ("Missile shortage limits operations")
+- Meeting summaries with no concrete outcome ("Crisis discussed in high-level meeting")
+
+Examples of isAnalysis=true (do NOT ingest these):
+- "Iran–US conflict: Are Patriot missiles enough to support Ukraine?" → rhetorical/editorial
+- "NATO Article 5 not triggered, alliance on high alert" → policy analysis
+- "White House rules out deployment of ground troops" → policy statement, no event
+- "Spain denies reports of cooperating with the United States" → diplomatic denial
+- "Houthi leader claims Arab currents align with aggressive powers" → propaganda speech
+- "De-escalation channels opened with Iran" → diplomatic posturing
+
+Examples of isAnalysis=false (DO ingest these):
+- "Airstrikes target missile storage sites in Tehran" → concrete military event
+- "Iranian bombers shot down near Al-Udeid base" → concrete incident
+- "Earthquake M6.5 near Attu Station, Alaska" → concrete natural event
+- "Qatar: Airspace closed amid regional escalation" → concrete transport disruption
+
+## Category: transport
+
+The "transport" category covers anything that affects travel logistics. This includes:
+- Flight disruptions, cancellations, and airport closures
+- Border crossing status updates, visa requirement changes, and entry restrictions
+- Shipping route disruptions, port closures, and strait blockades
+- Evacuation and repatriation flights
+- Road closures and land border changes
+
+Border/visa guides ARE relevant as transport events — they provide actionable travel info.
+Example: "Kuwait–Saudi Arabia border crossing: open with visa on arrival" → transport, sev=1
+
+## Location fields
+
+You output THREE location-related fields:
+
+### locationMentions
+All place names mentioned in the text (for reference/search). Raw extraction, no formatting needed.
+
+### geocodableLocation (CRITICAL for map accuracy)
+A single string optimized for Nominatim forward geocoding. This is the PRIMARY location of the event.
+- Format as "City, Country" or "Specific Place, Country" in English.
+- ALWAYS include the country name to disambiguate.
+- Use the most specific identifiable location, not vague regions.
+- Think: "If I type this into a geocoder, will it return the RIGHT point on the map?"
+
+Examples:
+- Text about airstrikes in Karaj, Iran → "Karaj, Iran" (NOT just "Karaj" which matches Slovakia)
+- Text about missile threat to Persian Gulf shipping → "Strait of Hormuz, Oman"
+- Text about sirens in central Israel → "Tel Aviv, Israel"
+- Text about border crossing Kuwait-Saudi Arabia → "Kuwait City, Kuwait"
+- Text about Middle East conflict generally → "Baghdad, Iraq" (pick a central representative city)
+- Text about explosions in Erbil → "Erbil, Iraq"
+
+BAD examples (will geocode to wrong places):
+- "Gulf" → matches Gulf County, Florida
+- "Central Israel" → matches places in Argentina
+- "Middle East" → matches a neighborhood in Baltimore, Maryland
+- "Karaj" alone → matches Krajné, Slovakia
+
+### expectedCountryCodes
+ISO 3166-1 alpha-2 codes (uppercase) for countries this event is about.
+Used to validate that the geocoder returned a result in the right country.
+- Iran → ["IR"], Israel → ["IL"], Turkey → ["TR"], Iraq → ["IQ"]
+- Multi-country events → ["IR", "IQ"] etc.
+- Always provide at least one code when the country is known.
+
+Ignore scheduled events, advertisements, and general news.
 Focus on actionable situational awareness information.`;
 
 const openai = createOpenAI();
@@ -77,7 +166,7 @@ export class Classifier {
         `[classifier] model=${modelId} time=${ms}ms tokens=${usage.promptTokens}+${usage.completionTokens}=${usage.totalTokens} inputChars=${rawText.length}`,
       );
 
-      if (!object.relevant) {
+      if (!object.relevant || object.isAnalysis) {
         return null;
       }
 

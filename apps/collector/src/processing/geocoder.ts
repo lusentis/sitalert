@@ -1,18 +1,39 @@
 import type Redis from "ioredis";
 import { z } from "zod";
 
+const NominatimAddressSchema = z.object({
+  city: z.string().optional(),
+  town: z.string().optional(),
+  village: z.string().optional(),
+  municipality: z.string().optional(),
+  county: z.string().optional(),
+  state: z.string().optional(),
+  country: z.string().optional(),
+  country_code: z.string().optional(),
+});
+
 const NominatimResultSchema = z.array(
   z.object({
     lat: z.string(),
     lon: z.string(),
     display_name: z.string(),
-    address: z
-      .object({
-        country_code: z.string().optional(),
-      })
-      .optional(),
+    address: NominatimAddressSchema.optional(),
   }),
 );
+
+type NominatimAddress = z.infer<typeof NominatimAddressSchema>;
+
+function simplifyDisplayName(address: NominatimAddress, fallback: string): string {
+  const locality =
+    address.city ?? address.town ?? address.village ?? address.municipality ?? address.county;
+  const country = address.country;
+
+  if (!locality && !country) return fallback;
+  if (!locality) return country ?? fallback;
+  if (!country) return locality;
+
+  return `${locality}, ${country}`;
+}
 
 export interface GeocodeResult {
   lat: number;
@@ -37,7 +58,10 @@ export class Geocoder {
       nominatimUrl ?? process.env["NOMINATIM_URL"] ?? "https://nominatim.openstreetmap.org";
   }
 
-  async geocode(locationName: string): Promise<GeocodeResult | null> {
+  async geocode(
+    locationName: string,
+    expectedCountryCodes?: string[],
+  ): Promise<GeocodeResult | null> {
     const normalized = locationName.trim().toLowerCase();
     if (!normalized) return null;
 
@@ -58,6 +82,18 @@ export class Geocoder {
           .safeParse(parsed);
 
         if (result.success) {
+          // Validate country code if expected codes provided
+          if (
+            expectedCountryCodes &&
+            expectedCountryCodes.length > 0 &&
+            result.data.countryCode &&
+            !expectedCountryCodes.includes(result.data.countryCode)
+          ) {
+            console.warn(
+              `[geocoder] Cache hit for "${locationName}" returned ${result.data.countryCode}, expected one of [${expectedCountryCodes.join(",")}] — skipping`,
+            );
+            return null;
+          }
           return result.data;
         }
       } catch {
@@ -67,6 +103,22 @@ export class Geocoder {
 
     // Rate-limit: chain requests to 1/sec (forward chain)
     const result = await this.rateLimitedGeocode(normalized);
+
+    // Validate country code against expected codes
+    if (
+      result &&
+      expectedCountryCodes &&
+      expectedCountryCodes.length > 0 &&
+      result.countryCode &&
+      !expectedCountryCodes.includes(result.countryCode)
+    ) {
+      console.warn(
+        `[geocoder] "${locationName}" geocoded to ${result.countryCode} (${result.displayName}), expected one of [${expectedCountryCodes.join(",")}] — rejecting`,
+      );
+      // Cache the negative result so we don't re-query
+      await this.redis.set(cacheKey, "null", "EX", NEGATIVE_CACHE_TTL);
+      return null;
+    }
 
     // Cache result (or negative result)
     if (result) {
@@ -173,7 +225,7 @@ export class Geocoder {
     location: string,
   ): Promise<GeocodeResult | null> {
     try {
-      const url = `${this.nominatimUrl}/search?q=${encodeURIComponent(location)}&format=json&limit=1`;
+      const url = `${this.nominatimUrl}/search?q=${encodeURIComponent(location)}&format=json&limit=1&addressdetails=1`;
       const response = await fetch(url, {
         headers: {
           "User-Agent": "Mozilla/5.0 (compatible; news-aggregator/1.0)",
@@ -191,11 +243,15 @@ export class Geocoder {
       if (results.length === 0) return null;
 
       const first = results[0];
+      const displayName = first.address
+        ? simplifyDisplayName(first.address, first.display_name)
+        : first.display_name;
+
       return {
         lat: parseFloat(first.lat),
         lng: parseFloat(first.lon),
         countryCode: first.address?.country_code?.toUpperCase(),
-        displayName: first.display_name,
+        displayName,
       };
     } catch (err: unknown) {
       console.error(

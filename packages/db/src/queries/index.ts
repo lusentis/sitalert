@@ -4,6 +4,7 @@ export {
   insertEvent,
   upsertEvent,
   findNearbyEvents,
+  queryEventTitlesByIds,
   type ViewportQuery,
   type EventWithCoords,
   type GeoJSONFeature,

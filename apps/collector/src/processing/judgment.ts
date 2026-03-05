@@ -49,8 +49,12 @@ Given a new event and lists of candidate duplicates and active situations, decid
    - If in doubt, assign to the existing situation rather than creating a new one.
 
 3. **New situation** (LAST RESORT): Only create a new situation if NO existing situation covers this event's country and category.
-   - Use short, generic titles: "[Country] [Category]" (e.g., "Sudan Forest Fires", "Ukraine Conflict", "Haiti Civil Unrest").
-   - Do NOT include dates, specifics, or qualifiers in situation titles.
+   - Use descriptive titles that summarize the situation:
+     e.g., "Chile wildfires devastate central regions",
+     "Missile strikes on Iranian military bases",
+     "Nepal earthquake damages Kathmandu valley"
+   - Include the country/region and the key event type
+   - Do NOT include dates or version numbers
 
 RULES:
 - EVERY event MUST result in exactly one action: duplicate, assign to situation, or create new situation.
