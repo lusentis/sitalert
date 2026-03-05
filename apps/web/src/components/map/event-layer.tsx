@@ -9,12 +9,11 @@ const SOURCE_ID = "events-source";
 const POINT_LAYER = "events-point";
 const PULSE_LAYER = "events-pulse";
 
-const SEVERITY_RADIUS_MIN = 6;
-const SEVERITY_RADIUS_MAX = 14;
+const POINT_RADIUS = 5;
 
 const PULSE_AGE_MINUTES = 30;
-const PULSE_BASE_RADIUS = 14;
-const PULSE_AMPLITUDE = 10;
+const PULSE_BASE_RADIUS = 8;
+const PULSE_AMPLITUDE = 6;
 
 interface EventLayerProps {
   data: GeoJSONFeatureCollection | null;
@@ -104,15 +103,7 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
       source: SOURCE_ID,
       paint: {
         "circle-color": categoryColorExpr,
-        "circle-radius": [
-          "interpolate",
-          ["linear"],
-          ["get", "severity"],
-          1,
-          SEVERITY_RADIUS_MIN,
-          5,
-          SEVERITY_RADIUS_MAX,
-        ],
+        "circle-radius": POINT_RADIUS,
         "circle-opacity": [
           "interpolate",
           ["linear"],
@@ -122,7 +113,7 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
           1,
           1.0,
         ],
-        "circle-stroke-width": 2,
+        "circle-stroke-width": 1.5,
         "circle-stroke-color": "#ffffff",
       },
     });
