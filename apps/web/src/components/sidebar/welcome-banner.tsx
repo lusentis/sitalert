@@ -20,12 +20,11 @@ export function WelcomeBanner({ onDismiss }: WelcomeBannerProps) {
         <X className="h-3.5 w-3.5" />
       </button>
       <p className="font-medium text-foreground pr-5">
-        Real-time global event monitor.
+        What&apos;s happening around the world, right now.
       </p>
       <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-        Aggregates conflict, disaster, and safety events from structured APIs
-        and OSINT sources. Use category filters to focus the map, or scroll the
-        feed below.
+        Conflicts, disasters, health alerts, and more — collected from global
+        monitoring sources. Filter by category above or browse the feed below.
       </p>
     </div>
   );

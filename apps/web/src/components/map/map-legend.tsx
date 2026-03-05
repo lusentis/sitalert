@@ -106,7 +106,7 @@ export function MapLegend({ choroplethActive = false }: MapLegendProps) {
         )}
 
         <p className="text-[10px] text-muted-foreground/70 mt-2">
-          Marker size = severity
+          Larger markers indicate higher severity
         </p>
       </div>
     );

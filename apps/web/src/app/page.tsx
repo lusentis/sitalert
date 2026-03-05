@@ -16,7 +16,7 @@ function LoadingFallback() {
           {/* Center dot */}
           <div className="absolute top-1/2 left-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/60" />
         </div>
-        <p className="text-sm text-muted-foreground font-mono tracking-wide">Scanning global feeds...</p>
+        <p className="text-sm text-muted-foreground font-mono tracking-wide">Loading latest events...</p>
       </div>
     </div>
   );

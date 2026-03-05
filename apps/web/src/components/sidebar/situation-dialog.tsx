@@ -127,7 +127,7 @@ export function SituationDialog({
           )}
           {!isLoading && events.length === 0 && (
             <div className="text-xs text-muted-foreground py-4 text-center">
-              No events found.
+              No linked events yet.
             </div>
           )}
           <div className="space-y-2">

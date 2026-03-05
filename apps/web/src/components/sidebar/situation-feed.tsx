@@ -89,10 +89,10 @@ export function SituationFeed({
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">
-                  No active situations.
+                  No situations match your filters.
                 </p>
                 <p className="text-xs text-muted-foreground/70">
-                  Try a wider time range or fewer category filters.
+                  Try a different time range or broaden your filters.
                 </p>
               </div>
             </div>

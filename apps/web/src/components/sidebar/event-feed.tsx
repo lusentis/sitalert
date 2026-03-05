@@ -118,10 +118,10 @@ export function EventFeed({
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">
-                  All clear for these filters.
+                  No events match your filters.
                 </p>
                 <p className="text-xs text-muted-foreground/70">
-                  Try a wider time range or fewer category filters.
+                  Try a different time range or broaden your filters.
                 </p>
               </div>
             </div>

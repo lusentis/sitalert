@@ -78,7 +78,7 @@ function SidebarContent({
             <TooltipContent side="bottom">
               {lastStreamEvent
                 ? `Last event: ${formatRelativeTime(lastStreamEvent.timestamp)}`
-                : "Connected, waiting for events"}
+                : "Live — listening for new events"}
             </TooltipContent>
           </Tooltip>
         )}

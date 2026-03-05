@@ -17,7 +17,7 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "TravelRisk — Real-time Global Event Monitor",
-  description: "Live situational awareness map with global event tracking",
+  description: "Live map of global safety events — conflicts, disasters, weather, and more",
   icons: {
     icon: "/favicon.svg",
   },
