@@ -254,18 +254,24 @@ export function EventLayer({ data, onEventClick }: EventLayerProps) {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       prefersReducedMotion.removeEventListener("change", handleMotionChange);
 
-      map.off("click", POINT_LAYER, handlePointClick);
-      map.off("click", PULSE_LAYER, handlePointClick);
-      map.off("mouseenter", POINT_LAYER, handleMouseEnter);
-      map.off("mouseleave", POINT_LAYER, handleMouseLeave);
-      map.off("mouseenter", PULSE_LAYER, handleMouseEnter);
-      map.off("mouseleave", PULSE_LAYER, handleMouseLeave);
+      if (!map) return;
 
-      if (layersAddedRef.current) {
-        if (map.getLayer(PULSE_LAYER)) map.removeLayer(PULSE_LAYER);
-        if (map.getLayer(POINT_LAYER)) map.removeLayer(POINT_LAYER);
-        if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
-        layersAddedRef.current = false;
+      try {
+        map.off("click", POINT_LAYER, handlePointClick);
+        map.off("click", PULSE_LAYER, handlePointClick);
+        map.off("mouseenter", POINT_LAYER, handleMouseEnter);
+        map.off("mouseleave", POINT_LAYER, handleMouseLeave);
+        map.off("mouseenter", PULSE_LAYER, handleMouseEnter);
+        map.off("mouseleave", PULSE_LAYER, handleMouseLeave);
+
+        if (layersAddedRef.current) {
+          if (map.getLayer(PULSE_LAYER)) map.removeLayer(PULSE_LAYER);
+          if (map.getLayer(POINT_LAYER)) map.removeLayer(POINT_LAYER);
+          if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
+          layersAddedRef.current = false;
+        }
+      } catch {
+        // Map instance may already be removed
       }
     };
   }, [map, isLoaded, setupLayers]);

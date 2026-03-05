@@ -103,10 +103,14 @@ export function ChoroplethLayer({ countryScores, visible, onCountryClick }: Chor
     });
 
     return () => {
-      if (layersAddedRef.current) {
-        if (map.getLayer(LINE_LAYER)) map.removeLayer(LINE_LAYER);
-        if (map.getLayer(FILL_LAYER)) map.removeLayer(FILL_LAYER);
-        if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
+      if (layersAddedRef.current && map) {
+        try {
+          if (map.getLayer(LINE_LAYER)) map.removeLayer(LINE_LAYER);
+          if (map.getLayer(FILL_LAYER)) map.removeLayer(FILL_LAYER);
+          if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
+        } catch {
+          // Map instance may already be removed
+        }
         layersAddedRef.current = false;
       }
     };

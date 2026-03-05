@@ -20,7 +20,6 @@ import { Activity, ChevronRight, AlertCircle } from "lucide-react";
 import { useOnboardingDismissed } from "@/hooks/use-onboarding";
 
 interface SidebarContentProps {
-  onboardingDismissed: boolean;
   filters: Filters;
   situations: SituationWithCoords[] | null;
   isLoading: boolean;
@@ -41,7 +40,6 @@ interface SidebarContentProps {
 }
 
 function SidebarContent({
-  onboardingDismissed,
   filters,
   situations,
   isLoading,
@@ -60,7 +58,7 @@ function SidebarContent({
   onSearchChange,
   onRetry,
 }: SidebarContentProps) {
-  const { dismissed, dismiss } = useOnboardingDismissed(onboardingDismissed);
+  const { dismissed, dismiss } = useOnboardingDismissed();
 
   return (
     <div className="flex flex-col h-full p-4 space-y-4 min-w-0">

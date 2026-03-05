@@ -17,13 +17,12 @@ import { Sidebar } from "@/components/sidebar/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 interface MainPageProps {
-  onboardingDismissed: boolean;
   advisories: Advisory[];
   initialEvents: GeoJSONFeatureCollection | null;
   initialSituations: SituationWithCoords[] | null;
 }
 
-export function MainPage({ onboardingDismissed, advisories, initialEvents, initialSituations }: MainPageProps) {
+export function MainPage({ advisories, initialEvents, initialSituations }: MainPageProps) {
   const filters = useFilters();
   const deepLink = useDeepLink();
   const debouncedSearch = useDebouncedValue(filters.q, 1500);
@@ -128,7 +127,6 @@ export function MainPage({ onboardingDismissed, advisories, initialEvents, initi
     <TooltipProvider delayDuration={400}>
       <div className="flex h-screen w-screen overflow-hidden">
         <Sidebar
-          onboardingDismissed={onboardingDismissed}
           filters={filters}
           situations={situations}
           isLoading={situationsLoading}

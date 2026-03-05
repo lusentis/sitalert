@@ -1,5 +1,3 @@
-export const runtime = "edge";
-
 const HEARTBEAT_INTERVAL_MS = 30_000;
 const CHANNEL = "events:new";
 
