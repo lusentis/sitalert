@@ -85,7 +85,7 @@ export function EventPopup({ features, currentIndex, onNavigate, onClose }: Even
         </div>
 
         {properties.summary && (
-          <p className="text-xs text-muted-foreground line-clamp-3 mb-2">
+          <p className="text-xs text-muted-foreground mb-2">
             {properties.summary}
           </p>
         )}
