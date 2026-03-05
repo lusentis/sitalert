@@ -32,7 +32,7 @@ export function AdvisoryPopup({ advisory, lngLat, onClose }: AdvisoryPopupProps)
             type="button"
             aria-label="Close popup"
             onClick={onClose}
-            className="-m-1 p-1 rounded text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            className="-m-1 p-1 rounded text-muted-foreground hover:text-foreground transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
           >
             <X className="h-4 w-4" />
           </button>

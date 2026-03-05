@@ -20,7 +20,7 @@ export function SearchInput({ value, onChange }: SearchInputProps) {
         placeholder="Search by location, keyword, or country..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full h-8 pl-8 pr-8 text-sm bg-muted/50 border border-border rounded-md placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-colors"
+        className="w-full h-8 pl-8 pr-8 text-sm bg-muted/50 border border-border rounded-md placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-colors"
       />
       {value && (
         <button

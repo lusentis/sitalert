@@ -50,13 +50,13 @@ export function CategoryFilter({
               <>
                 <button
                   onClick={handleAll}
-                  className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-[10px] text-muted-foreground hover:text-foreground transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
                 >
                   All
                 </button>
                 <button
                   onClick={handleInvert}
-                  className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-[10px] text-muted-foreground hover:text-foreground transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
                 >
                   Flip
                 </button>
@@ -64,7 +64,7 @@ export function CategoryFilter({
             )}
             <button
               onClick={handleNone}
-              className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+              className="text-[10px] text-muted-foreground hover:text-foreground transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
             >
               None
             </button>

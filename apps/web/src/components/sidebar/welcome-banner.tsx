@@ -15,7 +15,7 @@ export function WelcomeBanner({ onDismiss }: WelcomeBannerProps) {
       <button
         onClick={onDismiss}
         aria-label="Dismiss welcome message"
-        className="absolute top-1.5 right-1.5 p-1 rounded-sm text-muted-foreground hover:text-foreground transition-colors"
+        className="absolute top-1.5 right-1.5 p-1 rounded-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
       >
         <X className="h-3.5 w-3.5" />
       </button>

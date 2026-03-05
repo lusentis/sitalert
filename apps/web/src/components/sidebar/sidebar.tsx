@@ -112,7 +112,7 @@ function SidebarContent({
               {onRetry && (
                 <button
                   onClick={onRetry}
-                  className="ml-2 underline underline-offset-2 hover:text-red-300 transition-colors"
+                  className="ml-2 underline underline-offset-2 hover:text-red-300 transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
                 >
                   Retry
                 </button>
@@ -149,7 +149,7 @@ function SidebarContent({
         <div className="flex gap-1 bg-muted/50 rounded-md p-0.5">
           <button
             onClick={() => filters.setTab("situations")}
-            className={`flex-1 text-xs font-medium py-1.5 rounded transition-colors ${
+            className={`flex-1 text-xs font-medium py-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 ${
               filters.tab === "situations"
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -159,7 +159,7 @@ function SidebarContent({
           </button>
           <button
             onClick={() => filters.setTab("events")}
-            className={`flex-1 text-xs font-medium py-1.5 rounded transition-colors ${
+            className={`flex-1 text-xs font-medium py-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 ${
               filters.tab === "events"
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -196,7 +196,7 @@ function SidebarContent({
           <button
             onClick={scrollToTop}
             aria-label="Scroll to top"
-            className="sticky bottom-3 left-1/2 -translate-x-1/2 float-right clear-both z-10 flex items-center gap-1.5 rounded-full bg-card border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-md hover:text-foreground transition-colors motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2"
+            className="sticky bottom-3 left-1/2 -translate-x-1/2 float-right clear-both z-10 flex items-center gap-1.5 rounded-full bg-card border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-md hover:text-foreground transition-colors motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
           >
             <ArrowUp className="h-3 w-3" />
             Top
