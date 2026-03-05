@@ -33,14 +33,14 @@ export class ReliefWebAdapter extends BaseAdapter {
   private seenGuids = new Set<string>();
   private parser: Parser<Record<string, unknown>, ReliefWebItem>;
 
-  private static readonly FEED_URL = "https://reliefweb.int/disasters/rss.xml?appname=lusentis-integration-sdf20gfu2&status=alert&status=current&status=ongoing";
+  private static readonly FEED_URL = "https://reliefweb.int/disasters/rss.xml?status=alert&status=current&status=ongoing";
 
   constructor(pollingInterval = 900_000) {
     super({ defaultConfidence: 0.8, pollingInterval });
     this.parser = new Parser({
       requestOptions: {
         headers: {
-          "User-Agent": "lusentis-integration-sdf20gfu2",
+          "User-Agent": "Mozilla/5.0 (compatible; news-aggregator/1.0)",
         },
       },
     });
@@ -49,7 +49,7 @@ export class ReliefWebAdapter extends BaseAdapter {
   protected async poll(): Promise<void> {
     // Fetch manually to control headers and avoid rss-parser's HTTP client issues
     const response = await fetch(ReliefWebAdapter.FEED_URL, {
-      headers: { "User-Agent": "lusentis-integration-sdf20gfu2" },
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; news-aggregator/1.0)" },
     });
     if (!response.ok) {
       throw new Error(`ReliefWeb RSS returned ${response.status}`);

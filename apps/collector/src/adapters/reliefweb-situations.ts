@@ -222,7 +222,7 @@ function parseDisasterItem(item: ReliefWebDisasterItem): {
 
 // Use the unfiltered feed — query params like ?status=current trigger
 // Cloudflare bot protection on datacenter IPs (Railway, etc.)
-const FEED_URL = "https://reliefweb.int/disasters/rss.xml?appname=lusentis-integration-sdf20gfu2";
+const FEED_URL = "https://reliefweb.int/disasters/rss.xml";
 
 function elapsed(startMs: number): string {
   return `${((performance.now() - startMs) / 1000).toFixed(1)}s`;
@@ -239,7 +239,7 @@ export async function syncReliefWebSituations(
   const parser = new Parser<Record<string, unknown>, ReliefWebDisasterItem>({
     requestOptions: {
       headers: {
-        "User-Agent": "lusentis-integration-sdf20gfu2",
+        "User-Agent": "Mozilla/5.0 (compatible; news-aggregator/1.0)",
       },
     },
   });
@@ -249,7 +249,7 @@ export async function syncReliefWebSituations(
   const tFetch = performance.now();
   const response = await fetch(FEED_URL, {
     headers: {
-      "User-Agent": "lusentis-integration-sdf20gfu2",
+      "User-Agent": "Mozilla/5.0 (compatible; news-aggregator/1.0)",
       "Accept": "application/rss+xml, application/xml, text/xml, */*",
     },
   });
