@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Drawer } from "vaul";
+import Link from "next/link";
 import { Activity, ChevronRight, AlertCircle } from "lucide-react";
 import { useOnboardingDismissed } from "@/hooks/use-onboarding";
 
@@ -66,8 +67,10 @@ function SidebarContent({
   return (
     <div className="flex flex-col h-full p-4 space-y-4 min-w-0">
       <div className="flex items-center gap-2">
-        <Activity className="h-5 w-5 text-primary" />
-        <h1 className="text-lg font-bold font-mono tracking-tight">TravelRisk</h1>
+        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <Activity className="h-5 w-5 text-primary" />
+          <h1 className="text-lg font-bold font-mono tracking-tight">TravelRisk</h1>
+        </Link>
         {isConnected && (
           <Tooltip>
             <TooltipTrigger asChild>
