@@ -17,7 +17,7 @@ export function SearchInput({ value, onChange }: SearchInputProps) {
       <input
         ref={inputRef}
         type="text"
-        placeholder="Search situations..."
+        placeholder="Search situations & events..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-full h-8 pl-8 pr-8 text-sm bg-muted/50 border border-border rounded-md placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-colors"

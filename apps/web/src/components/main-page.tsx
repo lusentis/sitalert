@@ -7,6 +7,7 @@ import { useMapEvents } from "@/hooks/use-map-events";
 import { useSituations } from "@/hooks/use-situations";
 import { useEventStream } from "@/hooks/use-event-stream";
 import { useDeepLink } from "@/hooks/use-deep-link";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { MapView } from "@/components/map/map-view";
 import { MapLegend } from "@/components/map/map-legend";
 import { ChoroplethToggle } from "@/components/map/choropleth-toggle";
@@ -22,6 +23,8 @@ export function MainPage() {
   const [selectedEvent, setSelectedEvent] = useState<GeoJSONFeature | null>(
     null,
   );
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebouncedValue(searchQuery, 1500);
 
   const { data, isLoading: eventsLoading, error: eventsError, refetch } = useMapEvents({
     categories: filters.categories,
@@ -126,6 +129,22 @@ export function MainPage() {
     }
   }, [deepLink.eventId, data]);
 
+  // Filter map events by debounced search query
+  const filteredMapData = useMemo(() => {
+    if (!data || !debouncedSearch.trim()) return data;
+    const q = debouncedSearch.toLowerCase();
+    return {
+      ...data,
+      features: data.features.filter(
+        (f) =>
+          f.properties.title.toLowerCase().includes(q) ||
+          (f.properties.summary?.toLowerCase().includes(q) ?? false) ||
+          (f.properties.locationName?.toLowerCase().includes(q) ?? false) ||
+          (f.properties.countryCodes?.some((c: string) => c.toLowerCase().includes(q)) ?? false),
+      ),
+    };
+  }, [data, debouncedSearch]);
+
   // Combine errors for display
   const error = eventsError ?? situationsError;
 
@@ -146,10 +165,13 @@ export function MainPage() {
           selectedEventId={selectedEvent?.properties.id ?? null}
           deepLinkSituationId={deepLink.situationId}
           onSituationSelect={deepLink.selectSituation}
+          searchQuery={searchQuery}
+          debouncedSearch={debouncedSearch}
+          onSearchChange={setSearchQuery}
         />
         <div className="relative flex-1">
           <MapView
-            data={data}
+            data={filteredMapData}
             onBoundsChange={handleBoundsChange}
             onEventSelect={handleEventSelect}
             selectedEvent={selectedEvent}

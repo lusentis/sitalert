@@ -33,6 +33,9 @@ interface SidebarContentProps {
   selectedEventId?: string | null;
   deepLinkSituationId?: string | null;
   onSituationSelect?: (id: string | null) => void;
+  searchQuery: string;
+  debouncedSearch: string;
+  onSearchChange: (value: string) => void;
 }
 
 type FeedTab = "situations" | "events";
@@ -51,9 +54,11 @@ function SidebarContent({
   selectedEventId,
   deepLinkSituationId,
   onSituationSelect,
+  searchQuery,
+  debouncedSearch,
+  onSearchChange,
 }: SidebarContentProps) {
   const { dismissed, dismiss } = useOnboardingDismissed();
-  const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<FeedTab>("situations");
 
   return (
@@ -90,7 +95,7 @@ function SidebarContent({
 
       {!dismissed && <WelcomeBanner onDismiss={dismiss} />}
 
-      <SearchInput value={searchQuery} onChange={setSearchQuery} />
+      <SearchInput value={searchQuery} onChange={onSearchChange} />
 
       <CategoryFilter
         selected={filters.categories}
@@ -140,7 +145,7 @@ function SidebarContent({
         <SituationFeed
           situations={situations}
           isLoading={isLoading}
-          searchQuery={searchQuery}
+          searchQuery={debouncedSearch}
           deepLinkSituationId={deepLinkSituationId}
           onSituationSelect={onSituationSelect}
         />
@@ -151,6 +156,7 @@ function SidebarContent({
           onEventClick={onEventClick}
           isLoading={eventsLoading}
           selectedEventId={selectedEventId}
+          searchQuery={debouncedSearch}
         />
       )}
     </div>

@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { EventCard } from "./event-card";
 import type { NormalizedEvent } from "@travelrisk/shared";
 import { ageInMinutes } from "@travelrisk/shared";
+import { Clock } from "lucide-react";
 
 interface EventFeedProps {
   data: GeoJSONFeatureCollection | null;
@@ -13,6 +14,7 @@ interface EventFeedProps {
   onEventClick: (feature: GeoJSONFeature) => void;
   isLoading: boolean;
   selectedEventId?: string | null;
+  searchQuery?: string;
 }
 
 export function EventFeed({
@@ -21,6 +23,7 @@ export function EventFeed({
   onEventClick,
   isLoading,
   selectedEventId,
+  searchQuery,
 }: EventFeedProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -64,12 +67,23 @@ export function EventFeed({
     }
 
     // Sort newest first
-    return featureList.sort(
+    const sorted = featureList.sort(
       (a, b) =>
         new Date(b.properties.timestamp).getTime() -
         new Date(a.properties.timestamp).getTime(),
     );
-  }, [data, lastStreamEvent]);
+
+    // Filter by search query
+    if (!searchQuery?.trim()) return sorted;
+    const q = searchQuery.toLowerCase();
+    return sorted.filter(
+      (f) =>
+        f.properties.title.toLowerCase().includes(q) ||
+        (f.properties.summary?.toLowerCase().includes(q) ?? false) ||
+        (f.properties.locationName?.toLowerCase().includes(q) ?? false) ||
+        (f.properties.countryCodes?.some((c: string) => c.toLowerCase().includes(q)) ?? false),
+    );
+  }, [data, lastStreamEvent, searchQuery]);
 
   // Scroll selected card into view
   useEffect(() => {
@@ -121,6 +135,12 @@ export function EventFeed({
               />
             </div>
           ))}
+          {features.length > 0 && (
+            <div className="flex items-center justify-center gap-1.5 py-3 text-[10px] text-muted-foreground/50">
+              <Clock className="h-3 w-3" />
+              <span>Showing last 24 hours</span>
+            </div>
+          )}
         </div>
       </ScrollArea>
     </div>
