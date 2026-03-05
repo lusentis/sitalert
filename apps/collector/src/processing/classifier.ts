@@ -12,6 +12,9 @@ const classificationSchema = z.object({
   isAnalysis: z
     .boolean()
     .describe("True if this is opinion, analysis, or commentary rather than a discrete event"),
+  travelRelevant: z
+    .boolean()
+    .describe("Would a traveler or business traveler need to know about this?"),
   category: z
     .enum(EVENT_CATEGORIES as unknown as [string, ...string[]])
     .describe("Event category"),
@@ -61,6 +64,30 @@ IMPORTANT rules for title and summary:
   write "X: Y poses significant risk" or "Ongoing Y situation in X".
 
 Be conservative with severity — only use 4-5 for events with major impact.
+
+## Travel relevance (travelRelevant)
+
+This app serves travelers and business travelers. Ask: "Would someone planning or currently
+on a trip to this area need to know about this?" If no, set travelRelevant=false.
+
+travelRelevant=false (reject these):
+- Isolated local crime (a stabbing, a single murder, a robbery) — unless it indicates a pattern
+  or targets areas frequented by travelers
+- Domestic accidents (house fire, gas explosion, car crash) — no broader safety implication
+- Court rulings, legal proceedings, convictions — no immediate safety impact
+- Political ceremonies, commemorations, vigils — no disruption to movement
+- Local government scandals, political disputes with no physical disruption
+- Individual incidents with no area-wide impact (a helicopter damaging a field)
+
+travelRelevant=true (keep these):
+- Armed conflicts, military operations, terrorist attacks — any scale
+- Natural disasters, epidemics, extreme weather
+- Transport disruptions: airport closures, border changes, flight cancellations, shipping blockades
+- Civil unrest with area-wide impact: protests blocking roads, curfews, evacuations
+- Mass casualty events or ongoing security operations
+- Infrastructure failures affecting a city or region (power grid collapse, telecom outage)
+- Events that change the risk profile of an area (new travel advisory, martial law, airspace closure)
+- Elections, leader visits, state visits — low impact but relevant context for travelers (severity 1-2)
 
 ## What counts as analysis (isAnalysis=true)
 
@@ -166,7 +193,7 @@ export class Classifier {
         `[classifier] model=${modelId} time=${ms}ms tokens=${usage.promptTokens}+${usage.completionTokens}=${usage.totalTokens} inputChars=${rawText.length}`,
       );
 
-      if (!object.relevant || object.isAnalysis) {
+      if (!object.relevant || object.isAnalysis || !object.travelRelevant) {
         return null;
       }
 

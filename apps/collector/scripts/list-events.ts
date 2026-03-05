@@ -11,8 +11,29 @@ const DATABASE_URL = process.env["DATABASE_URL"];
 if (!DATABASE_URL) throw new Error("DATABASE_URL required");
 const sql = neon(DATABASE_URL);
 
+const mode = process.argv[2] || "all";
+
 async function main() {
-  // List events with their situation assignments
+  if (mode === "domestic") {
+    // Show only non-war, non-disaster events for relevance review
+    const events = await sql`
+      SELECT e.id, e.title, e.category, e.severity, e.location_name,
+             s.title as situation_title
+      FROM events e
+      LEFT JOIN situations s ON e.situation_id = s.id
+      WHERE e.category NOT IN ('natural_disaster', 'health_epidemic', 'weather_extreme')
+      ORDER BY e.category, e.timestamp DESC
+    `;
+    console.log(`\n=== NON-DISASTER EVENTS (${events.length}) ===\n`);
+    let cat = "";
+    for (const e of events) {
+      if (e.category !== cat) { cat = e.category; console.log(`\n--- ${cat.toUpperCase()} ---`); }
+      console.log(`  ${e.id.slice(0,8)} | ${e.title}`);
+    }
+    return;
+  }
+
+  // Default: list all events with situation assignments
   const events = await sql`
     SELECT e.id, e.title, e.category, e.severity, e.location_name,
            array_to_string(e.country_codes, ', ') as countries,
@@ -35,7 +56,6 @@ async function main() {
     console.log(`  ${e.timestamp} | ${e.countries || "?"} | ${e.title}${sit}`);
   }
 
-  // Unassigned events
   const unassigned = events.filter(e => !e.situation_id);
   console.log(`\n\n=== UNASSIGNED EVENTS: ${unassigned.length} / ${events.length} ===`);
 }
