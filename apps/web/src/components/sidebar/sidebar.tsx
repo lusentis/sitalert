@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState, useEffect } from "react";
 import type { SituationWithCoords } from "@travelrisk/db";
 import type { GeoJSONFeatureCollection, GeoJSONFeature } from "@travelrisk/db";
 import type { NormalizedEvent } from "@travelrisk/shared";
@@ -16,7 +17,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/component
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Drawer } from "vaul";
 import Link from "next/link";
-import { Activity, ChevronRight, AlertCircle } from "lucide-react";
+import { Activity, ChevronRight, AlertCircle, ArrowUp } from "lucide-react";
 import { useOnboardingDismissed } from "@/hooks/use-onboarding";
 
 interface SidebarContentProps {
@@ -59,117 +60,149 @@ function SidebarContent({
   onRetry,
 }: SidebarContentProps) {
   const { dismissed, dismiss } = useOnboardingDismissed();
+  const feedRef = useRef<HTMLDivElement>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const el = feedRef.current;
+    if (!el) return;
+    const onScroll = () => setShowScrollTop(el.scrollTop > 300);
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    feedRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
-    <div className="flex flex-col h-full p-4 space-y-4 min-w-0">
-      <div className="flex items-center gap-2">
-        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <Activity className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-bold font-mono tracking-tight">TravelRisk</h1>
-        </Link>
-        {isConnected && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-1.5 ml-auto cursor-default">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 motion-safe:animate-pulse" />
-                <span className="text-[10px] font-medium text-emerald-400/80 uppercase tracking-wider">Live</span>
-                <span className="sr-only">Live connection active</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              {lastStreamEvent
-                ? `Last event: ${formatRelativeTime(lastStreamEvent.timestamp)}`
-                : "Live — listening for new events"}
-            </TooltipContent>
-          </Tooltip>
+    <div className="flex flex-col h-full min-w-0">
+      {/* Fixed header */}
+      <div className="shrink-0 p-4 pb-0 space-y-4">
+        <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <Activity className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-bold font-mono tracking-tight">TravelRisk</h1>
+          </Link>
+          {isConnected && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5 ml-auto cursor-default">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 motion-safe:animate-pulse" />
+                  <span className="text-[10px] font-medium text-emerald-400/80 uppercase tracking-wider">Live</span>
+                  <span className="sr-only">Live connection active</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {lastStreamEvent
+                  ? `Last event: ${formatRelativeTime(lastStreamEvent.timestamp)}`
+                  : "Live — listening for new events"}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+
+        <Separator />
+
+        {error && (
+          <div className="flex items-start gap-2 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
+            <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span>{error}</span>
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="ml-2 underline underline-offset-2 hover:text-red-300 transition-colors"
+                >
+                  Retry
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {!dismissed && <WelcomeBanner onDismiss={dismiss} />}
+
+        <SearchInput value={searchQuery} onChange={onSearchChange} />
+
+        <CategoryFilter
+          selected={filters.categories}
+          onToggle={filters.toggleCategory}
+          onSetCategories={filters.setCategories}
+          counts={counts}
+        />
+        <Collapsible>
+          <CollapsibleTrigger className="group flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors w-full">
+            <ChevronRight className="h-3 w-3 transition-transform group-data-[state=open]:rotate-90" />
+            More filters
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-3">
+            <SeverityFilter
+              value={filters.minSeverity}
+              onChange={filters.setMinSeverity}
+            />
+          </CollapsibleContent>
+        </Collapsible>
+        <Separator />
+
+        {/* Feed tab toggle */}
+        <div className="flex gap-1 bg-muted/50 rounded-md p-0.5">
+          <button
+            onClick={() => filters.setTab("situations")}
+            className={`flex-1 text-xs font-medium py-1.5 rounded transition-colors ${
+              filters.tab === "situations"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Situations
+          </button>
+          <button
+            onClick={() => filters.setTab("events")}
+            className={`flex-1 text-xs font-medium py-1.5 rounded transition-colors ${
+              filters.tab === "events"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Events
+          </button>
+        </div>
+      </div>
+
+      {/* Scrollable feed */}
+      <div ref={feedRef} className="flex-1 min-h-0 overflow-y-auto p-4 pt-4 relative">
+        {filters.tab === "situations" ? (
+          <SituationFeed
+            situations={situations}
+            isLoading={isLoading}
+            searchQuery={debouncedSearch}
+            deepLinkSituationId={deepLinkSituationId}
+            onSituationSelect={onSituationSelect}
+          />
+        ) : (
+          <EventFeed
+            data={events}
+            lastStreamEvent={lastStreamEvent}
+            onEventClick={onEventClick}
+            isLoading={eventsLoading}
+            selectedEventId={selectedEventId}
+            searchQuery={debouncedSearch}
+          />
+        )}
+
+        {/* Back to top */}
+        {showScrollTop && (
+          <button
+            onClick={scrollToTop}
+            aria-label="Scroll to top"
+            className="sticky bottom-3 left-1/2 -translate-x-1/2 float-right clear-both z-10 flex items-center gap-1.5 rounded-full bg-card border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-md hover:text-foreground transition-colors motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2"
+          >
+            <ArrowUp className="h-3 w-3" />
+            Top
+          </button>
         )}
       </div>
-
-      <Separator />
-
-      {error && (
-        <div className="flex items-start gap-2 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
-          <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-          <div className="flex-1 min-w-0">
-            <span>{error}</span>
-            {onRetry && (
-              <button
-                onClick={onRetry}
-                className="ml-2 underline underline-offset-2 hover:text-red-300 transition-colors"
-              >
-                Retry
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {!dismissed && <WelcomeBanner onDismiss={dismiss} />}
-
-      <SearchInput value={searchQuery} onChange={onSearchChange} />
-
-      <CategoryFilter
-        selected={filters.categories}
-        onToggle={filters.toggleCategory}
-        onSetCategories={filters.setCategories}
-        counts={counts}
-      />
-      <Collapsible>
-        <CollapsibleTrigger className="group flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors w-full">
-          <ChevronRight className="h-3 w-3 transition-transform group-data-[state=open]:rotate-90" />
-          More filters
-        </CollapsibleTrigger>
-        <CollapsibleContent className="pt-3">
-          <SeverityFilter
-            value={filters.minSeverity}
-            onChange={filters.setMinSeverity}
-          />
-        </CollapsibleContent>
-      </Collapsible>
-      <Separator />
-
-      {/* Feed tab toggle */}
-      <div className="flex gap-1 bg-muted/50 rounded-md p-0.5">
-        <button
-          onClick={() => filters.setTab("situations")}
-          className={`flex-1 text-xs font-medium py-1.5 rounded transition-colors ${
-            filters.tab === "situations"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Situations
-        </button>
-        <button
-          onClick={() => filters.setTab("events")}
-          className={`flex-1 text-xs font-medium py-1.5 rounded transition-colors ${
-            filters.tab === "events"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Events
-        </button>
-      </div>
-
-      {filters.tab === "situations" ? (
-        <SituationFeed
-          situations={situations}
-          isLoading={isLoading}
-          searchQuery={debouncedSearch}
-          deepLinkSituationId={deepLinkSituationId}
-          onSituationSelect={onSituationSelect}
-        />
-      ) : (
-        <EventFeed
-          data={events}
-          lastStreamEvent={lastStreamEvent}
-          onEventClick={onEventClick}
-          isLoading={eventsLoading}
-          selectedEventId={selectedEventId}
-          searchQuery={debouncedSearch}
-        />
-      )}
     </div>
   );
 }
@@ -183,7 +216,7 @@ export function Sidebar(props: SidebarContentProps) {
       <aside
         role="complementary"
         aria-label="Situations sidebar"
-        className="hidden md:flex w-80 lg:w-96 shrink-0 h-screen flex-col bg-card border-r border-border overflow-y-auto overflow-x-hidden"
+        className="hidden md:flex w-80 lg:w-96 shrink-0 h-screen flex-col bg-card border-r border-border overflow-hidden"
       >
         <SidebarContent {...props} />
       </aside>
