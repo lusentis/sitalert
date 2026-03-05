@@ -364,9 +364,9 @@ async function main(): Promise<void> {
   // BullMQ job queue for recurring tasks
   const advisoriesEnabled = !!(travelConfig && typeof travelConfig === "object" && "enabled" in travelConfig && travelConfig.enabled);
 
-  const redisOpts = { connection: redis.options };
-  const queue = createJobQueue(redisOpts.connection);
-  const worker = createJobWorker(redisOpts.connection, async (job) => {
+  const bullmqConnection = { ...redis.options, maxRetriesPerRequest: null };
+  const queue = createJobQueue(bullmqConnection);
+  const worker = createJobWorker(bullmqConnection, async (job) => {
     switch (job.name) {
       case JOB_NAMES.RESOLVE_SITUATIONS: {
         const count = await resolveExpiredSituations(db);
