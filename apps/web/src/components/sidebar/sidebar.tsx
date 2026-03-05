@@ -95,8 +95,8 @@ function SidebarContent({
               </TooltipTrigger>
               <TooltipContent side="bottom">
                 {lastStreamEvent
-                  ? `Last event: ${formatRelativeTime(lastStreamEvent.timestamp)}`
-                  : "Live — listening for new events"}
+                  ? `Last event ${formatRelativeTime(lastStreamEvent.timestamp)}`
+                  : "Connected — waiting for events"}
               </TooltipContent>
             </Tooltip>
           )}

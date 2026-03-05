@@ -20,11 +20,10 @@ export function WelcomeBanner({ onDismiss }: WelcomeBannerProps) {
         <X className="h-3.5 w-3.5" />
       </button>
       <p className="font-medium text-foreground pr-5">
-        Real-time global situation monitor
+        Global situation monitor
       </p>
       <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-        Filter by category above, or tap a situation to see details. Events
-        update in real time.
+        Filter by category, or tap a situation for details. New events appear automatically.
       </p>
     </div>
   );

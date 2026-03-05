@@ -149,10 +149,10 @@ export function EventFeed({
               <CheckCircle className="size-10 mx-auto text-emerald-500/60" />
               <div className="space-y-1">
                 <p className="text-sm text-emerald-400/80">
-                  All clear — no events reported
+                  All clear
                 </p>
                 <p className="text-xs text-muted-foreground/70">
-                  No events have been recorded in the last 24 hours.
+                  No events in the last 24 hours.
                 </p>
               </div>
             </div>

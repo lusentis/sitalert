@@ -124,10 +124,10 @@ export function SituationFeed({
               <CheckCircle className="size-10 mx-auto text-emerald-500/60" />
               <div className="space-y-1">
                 <p className="text-sm text-emerald-400/80">
-                  All clear — no active situations
+                  All clear
                 </p>
                 <p className="text-xs text-muted-foreground/70">
-                  No situations are being tracked right now.
+                  No active situations worldwide.
                 </p>
               </div>
             </div>
