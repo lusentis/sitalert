@@ -26,7 +26,7 @@
     },
     "reliefweb": {
       "name": "ReliefWeb Disasters",
-      "url": "https://reliefweb.int/disasters/rss.xml",
+      "url": "https://reliefweb.int/disasters/rss.xml?appname=lusentis-integration-sdf20gfu2",
       "pollingInterval": 900000,
       "enabled": true
     },
