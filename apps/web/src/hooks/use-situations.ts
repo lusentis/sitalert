@@ -8,6 +8,7 @@ interface UseSituationsOptions {
   categories: string[];
   minSeverity: number;
   after: string;
+  initialData?: SituationWithCoords[] | null;
 }
 
 interface UseSituationsReturn {
@@ -18,12 +19,13 @@ interface UseSituationsReturn {
 }
 
 export function useSituations(options: UseSituationsOptions): UseSituationsReturn {
-  const { categories, minSeverity, after } = options;
-  const [data, setData] = useState<SituationWithCoords[] | null>(null);
+  const { categories, minSeverity, after, initialData } = options;
+  const [data, setData] = useState<SituationWithCoords[] | null>(initialData ?? null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const fetchIdRef = useRef(0);
+  const hasUsedInitialData = useRef(!!initialData);
 
   const doFetch = useCallback(() => {
     if (abortControllerRef.current) {
@@ -67,6 +69,10 @@ export function useSituations(options: UseSituationsOptions): UseSituationsRetur
   }, [categories, minSeverity, after]);
 
   useEffect(() => {
+    if (hasUsedInitialData.current) {
+      hasUsedInitialData.current = false;
+      return;
+    }
     doFetch();
   }, [doFetch]);
 

@@ -15,6 +15,7 @@ interface UseMapEventsOptions {
   categories: string[];
   minSeverity: number;
   after: string;
+  initialData?: GeoJSONFeatureCollection | null;
 }
 
 interface UseMapEventsReturn {
@@ -30,12 +31,13 @@ interface UseMapEventsReturn {
  * Refetches only when filters change or refetch() is called (e.g. on SSE event).
  */
 export function useMapEvents(options: UseMapEventsOptions): UseMapEventsReturn {
-  const { categories, minSeverity, after } = options;
-  const [data, setData] = useState<GeoJSONFeatureCollection | null>(null);
+  const { categories, minSeverity, after, initialData } = options;
+  const [data, setData] = useState<GeoJSONFeatureCollection | null>(initialData ?? null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const fetchIdRef = useRef(0);
+  const hasUsedInitialData = useRef(!!initialData);
 
   const doFetch = useCallback(() => {
     // Cancel any in-flight request
@@ -79,8 +81,12 @@ export function useMapEvents(options: UseMapEventsOptions): UseMapEventsReturn {
       });
   }, [categories, minSeverity, after]);
 
-  // Fetch when filters change
+  // Fetch when filters change (skip first if we have server-provided data)
   useEffect(() => {
+    if (hasUsedInitialData.current) {
+      hasUsedInitialData.current = false;
+      return;
+    }
     doFetch();
   }, [doFetch]);
 

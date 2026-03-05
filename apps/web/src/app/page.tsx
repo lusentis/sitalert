@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { createHttpClient } from "@travelrisk/db/client";
-import { queryAllAdvisories } from "@travelrisk/db/queries";
+import { queryAllAdvisories, queryEventsGeoJSON, querySituationsForFeed } from "@travelrisk/db/queries";
+import { timeRangeToDate } from "@travelrisk/shared";
 import { MainPage } from "@/components/main-page";
 
 function LoadingFallback() {
@@ -25,12 +26,17 @@ function LoadingFallback() {
   );
 }
 
-async function fetchAdvisories() {
+function getDb() {
   const databaseUrl = process.env["DATABASE_URL"];
-  if (!databaseUrl) return [];
+  if (!databaseUrl) return null;
+  return createHttpClient(databaseUrl);
+}
+
+async function fetchAdvisories() {
+  const db = getDb();
+  if (!db) return [];
 
   try {
-    const db = createHttpClient(databaseUrl);
     return await queryAllAdvisories(db);
   } catch (err) {
     console.error("Failed to fetch advisories:", err instanceof Error ? err.message : err);
@@ -38,10 +44,43 @@ async function fetchAdvisories() {
   }
 }
 
+async function fetchInitialEvents() {
+  const db = getDb();
+  if (!db) return null;
+
+  try {
+    return await queryEventsGeoJSON(db, {
+      minSeverity: 2,
+      after: timeRangeToDate("24h"),
+      limit: 5000,
+    });
+  } catch (err) {
+    console.error("Failed to fetch initial events:", err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
+async function fetchInitialSituations() {
+  const db = getDb();
+  if (!db) return null;
+
+  try {
+    return await querySituationsForFeed(db, {
+      minSeverity: 2,
+      after: timeRangeToDate("24h"),
+    });
+  } catch (err) {
+    console.error("Failed to fetch initial situations:", err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
 export default async function Home() {
-  const [cookieStore, advisories] = await Promise.all([
+  const [cookieStore, advisories, initialEvents, initialSituations] = await Promise.all([
     cookies(),
     fetchAdvisories(),
+    fetchInitialEvents(),
+    fetchInitialSituations(),
   ]);
   const onboardingDismissed = cookieStore.get("travelrisk-onboarding")?.value === "1";
 
@@ -50,6 +89,8 @@ export default async function Home() {
       <MainPage
         onboardingDismissed={onboardingDismissed}
         advisories={advisories}
+        initialEvents={initialEvents}
+        initialSituations={initialSituations}
       />
     </Suspense>
   );

@@ -92,11 +92,9 @@ export function CategoryFilter({
                 >
                   <Icon className="h-3.5 w-3.5" />
                   <span>{meta.label}</span>
-                  {count > 0 && (
-                    <span className="text-muted-foreground ml-0.5">
-                      {count}
-                    </span>
-                  )}
+                  <span className="text-muted-foreground ml-0.5 tabular-nums">
+                    {count}
+                  </span>
                 </Toggle>
               );
             })}

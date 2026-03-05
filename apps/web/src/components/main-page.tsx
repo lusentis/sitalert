@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo } from "react";
-import type { GeoJSONFeature, Advisory } from "@travelrisk/db";
+import type { GeoJSONFeature, GeoJSONFeatureCollection, Advisory, SituationWithCoords } from "@travelrisk/db";
 import { useFilters } from "@/hooks/use-filters";
 import { useMapEvents } from "@/hooks/use-map-events";
 import { useSituations } from "@/hooks/use-situations";
@@ -19,9 +19,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 interface MainPageProps {
   onboardingDismissed: boolean;
   advisories: Advisory[];
+  initialEvents: GeoJSONFeatureCollection | null;
+  initialSituations: SituationWithCoords[] | null;
 }
 
-export function MainPage({ onboardingDismissed, advisories }: MainPageProps) {
+export function MainPage({ onboardingDismissed, advisories, initialEvents, initialSituations }: MainPageProps) {
   const filters = useFilters();
   const deepLink = useDeepLink();
   const debouncedSearch = useDebouncedValue(filters.q, 1500);
@@ -30,12 +32,14 @@ export function MainPage({ onboardingDismissed, advisories }: MainPageProps) {
     categories: filters.categories,
     minSeverity: filters.minSeverity,
     after: filters.after,
+    initialData: initialEvents,
   });
 
   const { data: situations, isLoading: situationsLoading, error: situationsError, refetch: refetchSituations } = useSituations({
     categories: filters.categories,
     minSeverity: filters.minSeverity,
     after: filters.after,
+    initialData: initialSituations,
   });
 
   const { lastEvent, isConnected } = useEventStream();
