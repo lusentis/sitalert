@@ -119,8 +119,20 @@ export async function detectMergeCandidates(db: PoolClient): Promise<number> {
         model: openai("gpt-5-nano"),
         schema: mergeSchema,
         system: `You analyze a list of active situations in a global event monitoring system.
-Identify pairs that represent the SAME real-world crisis and should be merged.
-Only suggest merges when you are confident — same conflict, same disaster, just named differently or covering overlapping countries.
+Identify pairs that should be merged because they represent the SAME root-cause crisis.
+
+Merge when:
+- Two situations describe the same conflict from different angles or countries
+  (e.g., "Airstrikes on Iran" and "Iranian missile attacks on Israel" are ONE war)
+- A situation is a direct military component of a broader ongoing conflict
+  (e.g., attacks on Gulf states that are retaliation in a wider war)
+- Duplicate or near-duplicate titles for the same crisis
+
+Do NOT merge when:
+- Situations share a root cause but represent genuinely distinct theaters
+  (e.g., core war vs. allied naval deployments vs. shipping lane disruptions)
+- Unrelated crises happen to be in the same country (earthquake vs. insurgency)
+
 The situation with more events should be the keepId (the one that survives).
 Return an empty array if no merges are needed.`,
         prompt: `Active situations:\n${situationList}`,

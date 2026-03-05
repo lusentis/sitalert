@@ -42,18 +42,41 @@ Given a new event and lists of candidate duplicates and active situations, decid
 
 2. **Situation assignment** (PREFERRED): If NOT a duplicate, does this event belong to an ongoing situation? If so, set situationId.
    - ALWAYS prefer assigning to an existing situation over creating a new one.
-   - Match by OVERLAPPING COUNTRIES first: if the event's country appears in a situation's country list, it likely belongs there.
-   - Multi-country conflicts: a single situation can span many countries (e.g., "Israel-Iran Conflict" covers IL, IR, IQ, SY). An event in Iran about Israeli airstrikes belongs to an existing Israel-Iran conflict situation.
-   - Group broadly: same country + same category = same situation (e.g., all forest fires in CAR = one situation).
-   - Don't be picky about exact title matching — "Sudan Forest Fires" and "Forest fire in Sudan" are the SAME situation.
-   - If in doubt, assign to the existing situation rather than creating a new one.
+   - Think about the ROOT CAUSE: what real-world crisis is driving this event?
 
-3. **New situation** (LAST RESORT): Only create a new situation if NO existing situation covers this event's country and category.
-   - Use descriptive titles that summarize the situation:
-     e.g., "Chile wildfires devastate central regions",
-     "Missile strikes on Iranian military bases",
-     "Nepal earthquake damages Kathmandu valley"
-   - Include the country/region and the key event type
+   ## Situation hierarchy for complex conflicts
+   When a major conflict or crisis involves multiple countries, organize events into LAYERED situations:
+
+   **Core conflict situation** — The primary military/political confrontation.
+   Assign direct combat events here: airstrikes, missile launches, ground offensives, naval engagements,
+   retaliatory attacks — regardless of which country they physically occur in.
+   Example: if Country A strikes Country B, and Country B retaliates against Country A's allies,
+   ALL of those events belong to the SAME core conflict situation.
+
+   **Regional spillover situations** — Secondary effects that spread to neighboring countries.
+   Create separate situations when a distinct sub-theater emerges with its own dynamic:
+   e.g., drone attacks on a neutral neighbor's territory, shipping lane closures in a strait,
+   cross-border ground offensives by non-state actors. These are RELATED to the core conflict
+   but are geographically and operationally distinct.
+
+   **Allied/international response situations** — Third-party military deployments, NATO responses,
+   naval task forces, air defense postures by countries not directly at war. These are responses TO
+   the conflict, not part of the fighting itself.
+
+   ## Matching rules
+   - Match by ROOT CAUSE first, not by geography. An airstrike in Country X that is part of a war
+     between A and B belongs to the A-B war situation, not a "Country X conflict" situation.
+   - Don't fragment: if a war involves 5 countries, it should be 1 core situation + a few spillover
+     situations, NOT 5 separate country-level situations.
+   - Same country + same category + same root cause = same situation.
+   - If in doubt, assign to the broader existing situation rather than creating a new one.
+
+3. **New situation** (LAST RESORT): Only create a new situation if NO existing situation covers this event's root cause.
+   - Use descriptive titles that name the core dynamic, not just a country:
+     e.g., "US-led air campaign against Iranian military targets",
+     "Houthi attacks on Gulf shipping and energy infrastructure",
+     "NATO naval deployments in Eastern Mediterranean"
+   - Include the primary countries/region and the key event type
    - Do NOT include dates or version numbers
 
 RULES:
