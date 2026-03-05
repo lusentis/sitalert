@@ -42,6 +42,8 @@ Given a new event and lists of candidate duplicates and active situations, decid
 
 2. **Situation assignment** (PREFERRED): If NOT a duplicate, does this event belong to an ongoing situation? If so, set situationId.
    - ALWAYS prefer assigning to an existing situation over creating a new one.
+   - Match by OVERLAPPING COUNTRIES first: if the event's country appears in a situation's country list, it likely belongs there.
+   - Multi-country conflicts: a single situation can span many countries (e.g., "Israel-Iran Conflict" covers IL, IR, IQ, SY). An event in Iran about Israeli airstrikes belongs to an existing Israel-Iran conflict situation.
    - Group broadly: same country + same category = same situation (e.g., all forest fires in CAR = one situation).
    - Don't be picky about exact title matching — "Sudan Forest Fires" and "Forest fire in Sudan" are the SAME situation.
    - If in doubt, assign to the existing situation rather than creating a new one.
@@ -76,7 +78,7 @@ function formatSituations(situations: SituationWithCoords[]): string {
   return situations
     .map(
       (s) =>
-        `- [${s.id}] "${s.title}" | ${s.category} | severity ${s.severity} | ${s.eventCount} events | since ${s.firstSeen.toISOString()}`,
+        `- [${s.id}] "${s.title}" | ${s.category} | severity ${s.severity} | countries: ${(s.countryCodes ?? []).join(",") || "??"} | ${s.status} | ${s.eventCount} events | since ${s.firstSeen.toISOString()}`,
     )
     .join("\n");
 }
@@ -95,6 +97,7 @@ export class Judgment {
       summary: string;
       category: string;
       locationName: string;
+      countryCodes: string[];
       timestamp: string;
     },
     candidateDuplicates: EventWithCoords[],
@@ -106,6 +109,7 @@ Title: ${newEvent.title}
 Summary: ${newEvent.summary}
 Category: ${newEvent.category}
 Location: ${newEvent.locationName}
+Country codes: ${newEvent.countryCodes.join(", ") || "unknown"}
 Time: ${newEvent.timestamp}
 
 CANDIDATE DUPLICATES:

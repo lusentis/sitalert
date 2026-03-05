@@ -248,7 +248,7 @@ export class Pipeline {
 
     const tLlm = performance.now();
     const judgment = await this.judgment.call(
-      { title, summary, category, locationName, timestamp: timestamp.toISOString() },
+      { title, summary, category, locationName, countryCodes, timestamp: timestamp.toISOString() },
       candidates,
       activeSituations,
     );
@@ -294,7 +294,7 @@ export class Pipeline {
             countryCodes, timestamp, sources, media, rawText,
             situationId: matchedSituation.id,
           }),
-          updateSituation(this.db, matchedSituation.id, { severity }),
+          updateSituation(this.db, matchedSituation.id, { severity, countryCodes }),
         ]);
         console.log(`[pipeline] Assigned to situation ${matchedSituation.id}`);
         return { event, lat, lng };

@@ -1,4 +1,4 @@
-import { createPoolClient, resolveExpiredSituations } from "@travelrisk/db";
+import { createPoolClient, resolveExpiredSituations, decaySeverity } from "@travelrisk/db";
 import Redis from "ioredis";
 import WebSocket from "ws";
 import { readFileSync } from "node:fs";
@@ -10,6 +10,14 @@ import { Pipeline } from "./pipeline";
 import { Classifier } from "./processing/classifier";
 import { Geocoder } from "./processing/geocoder";
 import { Deduplicator } from "./processing/deduplicator";
+import { runSituationAudit } from "./processing/situation-audit";
+import {
+  createJobQueue,
+  createJobWorker,
+  registerRepeatableJobs,
+  runAllJobsImmediately,
+  JOB_NAMES,
+} from "./jobs";
 
 import { UsgsAdapter } from "./adapters/usgs";
 import { EmscAdapter } from "./adapters/emsc";
@@ -353,50 +361,71 @@ async function main(): Promise<void> {
     `[collector] Running with ${adapters.length} active adapter(s)`,
   );
 
-  // Run every hour — resolve situations with no events in 48h
-  setInterval(async () => {
-    try {
-      const count = await resolveExpiredSituations(db, 48);
-      if (count > 0) {
-        console.log(`[situations] Resolved ${count} expired situations`);
+  // BullMQ job queue for recurring tasks
+  const advisoriesEnabled = !!(travelConfig && typeof travelConfig === "object" && "enabled" in travelConfig && travelConfig.enabled);
+
+  const redisOpts = { connection: redis.options };
+  const queue = createJobQueue(redisOpts.connection);
+  const worker = createJobWorker(redisOpts.connection, async (job) => {
+    switch (job.name) {
+      case JOB_NAMES.RESOLVE_SITUATIONS: {
+        const count = await resolveExpiredSituations(db);
+        if (count > 0) {
+          console.log(`[situations] Resolved ${count} expired situations`);
+        }
+        break;
       }
-    } catch (err) {
-      console.error("[situations] Error resolving expired:", err instanceof Error ? err.message : err);
+      case JOB_NAMES.DECAY_SEVERITY: {
+        const count = await decaySeverity(db);
+        if (count > 0) {
+          console.log(`[situations] Decayed severity for ${count} situations`);
+        }
+        break;
+      }
+      case JOB_NAMES.SYNC_WIKIPEDIA: {
+        await syncWikipediaConflicts(db, geocoder, redis);
+        break;
+      }
+      case JOB_NAMES.SYNC_RELIEFWEB: {
+        await syncReliefWebSituations(db, geocoder, redis);
+        break;
+      }
+      case JOB_NAMES.SYNC_ADVISORIES: {
+        await syncTravelAdvisories(db, redis);
+        break;
+      }
+      case JOB_NAMES.SITUATION_AUDIT: {
+        await runSituationAudit(db);
+        break;
+      }
+      default:
+        console.warn(`[jobs] Unknown job: ${job.name}`);
     }
-  }, 60 * 60 * 1000);
+  });
 
-  // Re-sync travel advisories every 12 hours
-  if (travelConfig && typeof travelConfig === "object" && "enabled" in travelConfig && travelConfig.enabled) {
-    setInterval(() => {
-      syncTravelAdvisories(db, redis).catch((err: unknown) => {
-        console.error("[collector] US advisory sync failed:", err instanceof Error ? err.message : err);
-      });
-    }, 12 * 60 * 60 * 1000);
-  }
+  worker.on("completed", (job) => {
+    console.log(`[jobs] Completed: ${job.name}`);
+  });
 
-  // Re-sync Wikipedia conflicts every 24 hours
-  setInterval(() => {
-    syncWikipediaConflicts(db, geocoder, redis).catch((err: unknown) => {
-      console.error(
-        "[collector] Wikipedia conflict re-sync failed:",
-        err instanceof Error ? err.message : err,
-      );
-    });
-  }, 24 * 60 * 60 * 1000);
+  worker.on("failed", (job, err) => {
+    console.error(`[jobs] Failed: ${job?.name}`, err.message);
+  });
 
-  // Re-sync ReliefWeb situations every 6 hours
-  setInterval(() => {
-    syncReliefWebSituations(db, geocoder, redis).catch((err: unknown) => {
-      console.error(
-        "[collector] ReliefWeb situation re-sync failed:",
-        err instanceof Error ? err.message : err,
-      );
-    });
-  }, 6 * 60 * 60 * 1000);
+  // Register repeatable jobs (idempotent — BullMQ deduplicates)
+  await registerRepeatableJobs(queue, advisoriesEnabled);
+
+  // Run all jobs immediately on startup
+  await runAllJobsImmediately(queue, advisoriesEnabled);
+
+  console.log("[jobs] BullMQ job queue initialized");
 
   // Graceful shutdown
   const shutdown = async (signal: string) => {
     console.log(`[collector] Received ${signal}, shutting down...`);
+
+    await worker.close();
+    await queue.close();
+    console.log("[collector] BullMQ worker and queue closed");
 
     for (const adapter of adapters) {
       try {

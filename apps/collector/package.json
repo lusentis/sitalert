@@ -20,6 +20,7 @@
     "@travelrisk/db": "workspace:*",
     "@travelrisk/shared": "workspace:*",
     "ai": "^4.1.0",
+    "bullmq": "^5.70.2",
     "drizzle-orm": "^0.38.0",
     "ioredis": "^5.4.0",
     "rss-parser": "^3.13.0",

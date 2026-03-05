@@ -18,10 +18,17 @@ export {
   upsertSituation,
   updateSituation,
   resolveExpiredSituations,
+  decaySeverity,
+  mergeSituations,
   querySituationsForFeed,
   queryEventsBySituation,
+  clusterOrphanedEvents,
+  assignEventsToSituation,
+  queryActiveSituationsFlat,
+  queryCoverageGaps,
   type SituationWithCoords,
   type SituationFeedQuery,
+  type OrphanCluster,
 } from "./situations";
 
 export {

@@ -1,4 +1,4 @@
-import { sql, and, eq, lte, gte, inArray, desc } from "drizzle-orm";
+import { sql, and, eq, lte, gte, inArray, isNull, desc } from "drizzle-orm";
 import { situations, events, type Situation } from "../schema";
 import type { HttpClient, PoolClient } from "../client";
 import type { EventCategory } from "@travelrisk/shared";
@@ -17,6 +17,8 @@ export async function findActiveSituations(
   category: EventCategory,
   _withinKm: number = 500,
 ): Promise<SituationWithCoords[]> {
+  const recentCutoff = new Date(Date.now() - 7 * 24 * 3600_000);
+
   const rows = await db
     .select({
       situation: situations,
@@ -26,8 +28,8 @@ export async function findActiveSituations(
     .from(situations)
     .where(
       and(
-        eq(situations.status, "active"),
         sql`${situations.category} = ${category}`,
+        sql`(${situations.status} = 'active' OR (${situations.status} = 'resolved' AND ${situations.lastUpdated} >= ${recentCutoff}))`,
       ),
     )
     .orderBy(desc(situations.lastUpdated));
@@ -71,19 +73,28 @@ export async function createSituation(
 export async function updateSituation(
   db: DbClient,
   id: string,
-  data: { severity: number; summary?: string },
+  data: { severity: number; summary?: string; countryCodes?: string[] },
 ): Promise<Situation> {
   const now = new Date();
 
   const set: Record<string, unknown> = {
     eventCount: sql`${situations.eventCount} + 1`,
     severity: sql`GREATEST(${situations.severity}, ${data.severity})`,
+    status: "active" as const,
     lastUpdated: now,
     updatedAt: now,
   };
 
   if (data.summary !== undefined) {
     set.summary = data.summary;
+  }
+
+  if (data.countryCodes && data.countryCodes.length > 0) {
+    set.countryCodes = sql`(
+      SELECT array_agg(DISTINCT code) FROM unnest(
+        COALESCE(${situations.countryCodes}, ARRAY[]::text[]) || ${data.countryCodes}::text[]
+      ) AS code
+    )`;
   }
 
   const [updated] = await db
@@ -136,24 +147,133 @@ export async function upsertSituation(
   return result;
 }
 
+const SEVERITY_TTL_HOURS: Record<number, number> = {
+  1: 24,
+  2: 24,
+  3: 48,
+  4: 168, // 7 days
+  5: 336, // 14 days
+};
+
 export async function resolveExpiredSituations(
   db: DbClient,
-  hoursIdle: number = 48,
 ): Promise<number> {
-  const cutoff = new Date(Date.now() - hoursIdle * 60 * 60 * 1000);
-
+  const now = Date.now();
   const result = await db
     .update(situations)
     .set({ status: "resolved" as const, updatedAt: new Date() })
     .where(
       and(
         eq(situations.status, "active"),
-        lte(situations.lastUpdated, cutoff),
+        sql`${situations.externalId} IS NULL`,
+        sql`${situations.lastUpdated} < CASE ${situations.severity}
+          WHEN 1 THEN ${new Date(now - SEVERITY_TTL_HOURS[1] * 3600_000)}::timestamptz
+          WHEN 2 THEN ${new Date(now - SEVERITY_TTL_HOURS[2] * 3600_000)}::timestamptz
+          WHEN 3 THEN ${new Date(now - SEVERITY_TTL_HOURS[3] * 3600_000)}::timestamptz
+          WHEN 4 THEN ${new Date(now - SEVERITY_TTL_HOURS[4] * 3600_000)}::timestamptz
+          ELSE ${new Date(now - SEVERITY_TTL_HOURS[5] * 3600_000)}::timestamptz
+        END`,
       ),
     )
     .returning();
 
   return result.length;
+}
+
+const SEVERITY_DECAY_HOURS: Record<number, number> = {
+  3: 24,
+  4: 72, // 3 days
+  5: 168, // 7 days
+};
+
+export async function decaySeverity(db: DbClient): Promise<number> {
+  const now = Date.now();
+  let totalDecayed = 0;
+
+  for (const [sevStr, hours] of Object.entries(SEVERITY_DECAY_HOURS)) {
+    const sev = Number(sevStr);
+    const cutoff = new Date(now - hours * 3600_000);
+
+    const result = await db
+      .update(situations)
+      .set({
+        severity: sql`${situations.severity} - 1`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(situations.status, "active"),
+          sql`${situations.externalId} IS NULL`,
+          sql`${situations.severity} = ${sev}`,
+          lte(situations.lastUpdated, cutoff),
+        ),
+      )
+      .returning();
+
+    totalDecayed += result.length;
+  }
+
+  return totalDecayed;
+}
+
+export async function mergeSituations(
+  db: DbClient,
+  keepId: string,
+  mergeId: string,
+): Promise<void> {
+  const now = new Date();
+
+  // Reassign all events from mergeId to keepId
+  await db
+    .update(events)
+    .set({ situationId: keepId, updatedAt: now })
+    .where(eq(events.situationId, mergeId));
+
+  // Get both situations
+  const [keep] = await db
+    .select()
+    .from(situations)
+    .where(eq(situations.id, keepId));
+  const [merge] = await db
+    .select()
+    .from(situations)
+    .where(eq(situations.id, mergeId));
+
+  if (!keep || !merge) return;
+
+  // Merge countryCodes, take max severity, earliest firstSeen, latest lastUpdated
+  const mergedCodes = [
+    ...new Set([
+      ...(keep.countryCodes ?? []),
+      ...(merge.countryCodes ?? []),
+    ]),
+  ];
+
+  // Recount events from actual event rows
+  const [countRow] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(events)
+    .where(eq(events.situationId, keepId));
+
+  await db
+    .update(situations)
+    .set({
+      countryCodes: mergedCodes,
+      severity: Math.max(keep.severity, merge.severity),
+      firstSeen: keep.firstSeen < merge.firstSeen ? keep.firstSeen : merge.firstSeen,
+      lastUpdated: keep.lastUpdated > merge.lastUpdated ? keep.lastUpdated : merge.lastUpdated,
+      eventCount: countRow?.count ?? keep.eventCount,
+      updatedAt: now,
+    })
+    .where(eq(situations.id, keepId));
+
+  // Soft-delete the merged situation
+  await db
+    .update(situations)
+    .set({ status: "resolved" as const, updatedAt: now })
+    .where(eq(situations.id, mergeId));
+
+  console.log(`[situations] Merged situation ${mergeId} into ${keepId}`);
 }
 
 export interface SituationFeedQuery {
@@ -232,4 +352,133 @@ export async function queryEventsBySituation(
     .orderBy(desc(events.timestamp));
 
   return rows;
+}
+
+// Audit helper: cluster orphaned events by country+category
+export interface OrphanCluster {
+  category: EventCategory;
+  countryCode: string;
+  eventIds: string[];
+  maxSeverity: number;
+}
+
+export async function clusterOrphanedEvents(
+  db: DbClient,
+): Promise<OrphanCluster[]> {
+  const cutoff = new Date(Date.now() - 24 * 3600_000);
+
+  // Find orphaned events with country codes from last 24h
+  const orphans = await db
+    .select({
+      id: events.id,
+      category: events.category,
+      severity: events.severity,
+      countryCodes: events.countryCodes,
+    })
+    .from(events)
+    .where(
+      and(
+        isNull(events.situationId),
+        gte(events.timestamp, cutoff),
+      ),
+    );
+
+  // Group by country+category in code (unnest in JS, not SQL, to avoid subquery issues)
+  const groups = new Map<string, { ids: string[]; maxSev: number; category: EventCategory; countryCode: string }>();
+
+  for (const orphan of orphans) {
+    for (const cc of orphan.countryCodes ?? []) {
+      const key = `${cc}:${orphan.category}`;
+      const group = groups.get(key);
+      if (group) {
+        group.ids.push(orphan.id);
+        group.maxSev = Math.max(group.maxSev, orphan.severity);
+      } else {
+        groups.set(key, {
+          ids: [orphan.id],
+          maxSev: orphan.severity,
+          category: orphan.category as EventCategory,
+          countryCode: cc,
+        });
+      }
+    }
+  }
+
+  // Only return clusters with 3+ events
+  return Array.from(groups.values())
+    .filter((g) => g.ids.length >= 3)
+    .map((g) => ({
+      category: g.category,
+      countryCode: g.countryCode,
+      eventIds: g.ids,
+      maxSeverity: g.maxSev,
+    }));
+}
+
+// Audit helper: assign events to a situation
+export async function assignEventsToSituation(
+  db: DbClient,
+  eventIds: string[],
+  situationId: string,
+): Promise<void> {
+  if (eventIds.length === 0) return;
+
+  await db
+    .update(events)
+    .set({ situationId, updatedAt: new Date() })
+    .where(inArray(events.id, eventIds));
+}
+
+// Audit helper: get all active situations as flat array (no geo)
+export async function queryActiveSituationsFlat(
+  db: DbClient,
+): Promise<Situation[]> {
+  return db
+    .select()
+    .from(situations)
+    .where(eq(situations.status, "active"))
+    .orderBy(desc(situations.lastUpdated));
+}
+
+// Audit helper: find high-severity external situations with no recent events
+export async function queryCoverageGaps(
+  db: DbClient,
+): Promise<Array<{ id: string; title: string; severity: number; externalId: string | null }>> {
+  const cutoff = new Date(Date.now() - 48 * 3600_000);
+
+  const gaps = await db
+    .select({
+      id: situations.id,
+      title: situations.title,
+      severity: situations.severity,
+      externalId: situations.externalId,
+    })
+    .from(situations)
+    .where(
+      and(
+        eq(situations.status, "active"),
+        sql`${situations.externalId} IS NOT NULL`,
+        gte(situations.severity, 4),
+      ),
+    );
+
+  const result: Array<{ id: string; title: string; severity: number; externalId: string | null }> = [];
+
+  for (const gap of gaps) {
+    const [recent] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(events)
+      .where(
+        and(
+          eq(events.situationId, gap.id),
+          gte(events.timestamp, cutoff),
+        ),
+      );
+
+    if ((recent?.count ?? 0) === 0) {
+      result.push(gap);
+    }
+  }
+
+  return result;
 }
