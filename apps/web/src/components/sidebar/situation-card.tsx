@@ -68,11 +68,11 @@ export function SituationCard({ situation, onClick, isSelected }: SituationCardP
               <Layers className="h-3 w-3" />
               {situation.eventCount}
             </span>
-            {situation.lastEventAt && (
-              <span className="text-xs text-muted-foreground/70">
-                {formatRelativeTime(String(situation.lastEventAt))}
-              </span>
-            )}
+            <span className="text-xs text-muted-foreground/70">
+              {situation.lastEventAt
+                ? formatRelativeTime(String(situation.lastEventAt))
+                : "No recent activity"}
+            </span>
           </div>
         </div>
       </div>
