@@ -102,6 +102,14 @@ travelRelevant=false (reject these):
 - Political ceremonies, commemorations, vigils — no disruption to movement
 - Local government scandals, political disputes with no physical disruption
 - Individual incidents with no area-wide impact (a helicopter damaging a field)
+- Cultural events, film festivals, award controversies — no physical safety impact
+- Isolated animal attacks (shark, dingo, bear) — unless indicating a pattern
+- Individual drink-spiking, poisoning, or murder cases — unless mass-casualty or ongoing serial threat
+- Sports events, tournaments, records — no safety implication
+- Diplomatic ceremonies, treaty signings, consular restorations — no disruption
+- Weather records that don't cause disruption (hottest day, UV index) — only actual severe weather events
+- Paralympic/Olympic boycotts, ceremony protests — political gesture, no travel impact
+- Death or illness of political figures — unless it triggers unrest or succession crisis
 
 travelRelevant=true (keep these):
 - Armed conflicts, military operations, terrorist attacks — any scale

@@ -76,10 +76,15 @@ Given a new event and lists of candidate duplicates and active situations, decid
    - Same country + same category + same root cause = same situation.
    - If in doubt, assign to the broader existing situation rather than creating a new one.
 
-3. **Standalone event** (for low-impact one-offs): If this is an isolated, low-severity (1-3) event that doesn't belong to any existing situation and isn't significant enough to create one, set standalone=true.
-   - Examples: a single transport disruption, a minor weather advisory, an isolated security alert, a small protest.
-   - These events exist on the map without a parent situation.
-   - Do NOT use standalone for high-severity (4-5) events — those always need a situation.
+3. **Standalone event** (rare — significant one-offs): Set standalone=true ONLY for events that are
+   significant enough to show on the map but don't belong to any broader pattern or ongoing situation.
+   Standalone is RARE. It means "important but isolated" — a one-off event with no broader context.
+   - Examples: a terrorist attack in a normally safe country, a one-off infrastructure collapse,
+     a single major transport disruption (bridge collapse, airport closure).
+   - Standalone can be ANY severity. A catastrophic one-off event (e.g., a mass shooting in a safe
+     country) is still standalone if it doesn't belong to an ongoing situation.
+   - Most events should either be duplicates, assigned to an existing situation, or create a new situation.
+     Standalone is the exception, not the default.
 
 4. **New situation** (LAST RESORT): Only create a new situation if NO existing situation covers this event's root cause AND the event is significant enough (severity 4-5, or a clearly distinct emerging crisis).
 
@@ -100,6 +105,8 @@ Given a new event and lists of candidate duplicates and active situations, decid
    The title must answer "what is happening?" not just "where and what category?"
    Include: the specific event/action, who is involved, and where.
    Do NOT include dates or version numbers.
+   - "Country Health Epidemic" — BANNED. Name the disease: "Dengue outbreak in Siem Reap, Cambodia"
+   - "Country Volcanoes" — BANNED. Name the volcano: "Kīlauea eruption on Big Island, Hawaii"
 
 RULES:
 - EVERY event MUST result in exactly one action: duplicate, assign to situation, standalone, or create new situation.

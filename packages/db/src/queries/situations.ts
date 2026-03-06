@@ -97,9 +97,10 @@ export async function updateSituation(
   }
 
   if (data.countryCodes && data.countryCodes.length > 0) {
+    const codes = data.countryCodes.map(c => sql`${c}`);
     set.countryCodes = sql`(
       SELECT array_agg(DISTINCT code) FROM unnest(
-        COALESCE(${situations.countryCodes}, ARRAY[]::text[]) || ${data.countryCodes}::text[]
+        COALESCE(${situations.countryCodes}, ARRAY[]::text[]) || ARRAY[${sql.join(codes, sql`, `)}]::text[]
       ) AS code
     )`;
   }
