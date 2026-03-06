@@ -171,10 +171,6 @@ export class Pipeline {
       ];
 
       const collectedCodes = new Set<string>(countryCodes);
-      // Seed with LLM-provided codes
-      for (const code of classification.expectedCountryCodes) {
-        collectedCodes.add(code);
-      }
 
       let geocodeAttempts = 0;
       for (const candidate of locationCandidates) {
@@ -188,6 +184,12 @@ export class Pipeline {
           if (geocoded.countryCode) {
             collectedCodes.add(geocoded.countryCode);
           }
+        }
+      }
+      // Fall back to LLM-provided codes only if geocoding found nothing
+      if (collectedCodes.size === 0) {
+        for (const code of classification.expectedCountryCodes) {
+          collectedCodes.add(code);
         }
       }
       countryCodes = [...collectedCodes];

@@ -13,6 +13,19 @@ import { cn } from "@/lib/utils";
 import { MapPin, Layers } from "lucide-react";
 import { formatCountryCodes } from "@/lib/country-codes";
 
+function isOlderThan48h(date: Date | string): boolean {
+  const ts = typeof date === "string" ? new Date(date).getTime() : date.getTime();
+  return Date.now() - ts > 48 * 3600_000;
+}
+
+function UnderReportedBadge() {
+  return (
+    <span className="text-[10px] px-1.5 py-0 rounded-full bg-amber-500/15 text-amber-400 font-medium">
+      Under-reported
+    </span>
+  );
+}
+
 interface SituationCardProps {
   situation: SituationWithCoords;
   onClick: (situation: SituationWithCoords) => void;
@@ -69,14 +82,22 @@ export function SituationCard({ situation, onClick, isSelected }: SituationCardP
               {situation.eventCount}
             </span>
             {situation.lastEventAt ? (
-              <span className="text-xs text-muted-foreground/70">
-                {formatRelativeTime(String(situation.lastEventAt))}
-              </span>
+              <>
+                <span className="text-xs text-muted-foreground/70">
+                  {formatRelativeTime(String(situation.lastEventAt))}
+                </span>
+                {isOlderThan48h(situation.lastEventAt) && <UnderReportedBadge />}
+              </>
             ) : situation.eventCount > 0 ? (
-              <span className="text-xs text-muted-foreground/50">
-                No recent activity
-              </span>
-            ) : null}
+              <>
+                <span className="text-xs text-muted-foreground/50">
+                  No recent activity
+                </span>
+                <UnderReportedBadge />
+              </>
+            ) : (
+              <UnderReportedBadge />
+            )}
           </div>
         </div>
       </div>

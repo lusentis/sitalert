@@ -39,8 +39,8 @@ const classificationSchema = z.object({
   expectedCountryCodes: z
     .array(z.string())
     .describe(
-      "ISO 3166-1 alpha-2 country codes (uppercase) for countries this event relates to. " +
-      "Used to validate geocoding results. E.g. ['IR'] for Iran, ['IL'] for Israel.",
+      "ISO 3166-1 alpha-2 codes for countries DIRECTLY AFFECTED — where the event is physically happening or directly impacting. " +
+      "Do NOT include countries merely mentioned as context. E.g. ['IR'] for Iran, ['IL'] for Israel.",
     ),
 });
 
@@ -78,6 +78,17 @@ Vague or unconfirmed threats (e.g., "threat reported at X", "security alert at Y
 confirmed incident) should be severity=1 at most. If there's no confirmed action, no casualties,
 and no disruption, consider setting travelRelevant=false entirely.
 
+## Routine politics
+
+Elections, government formation, political appointments, key arrests, and leadership changes
+are category=civil_unrest, severity=1. NEVER classify politics as "infrastructure".
+Severity 2+ ONLY if there is confirmed violence, mass disruption, or a declared state of emergency.
+
+Examples:
+- "Bihar may form BJP-led government" → civil_unrest, severity 1
+- "Japan introduces flexible visa renewal" → transport, severity 1
+- "President declares state of emergency after protests" → civil_unrest, severity 3
+
 ## Travel relevance (travelRelevant)
 
 This app serves travelers and business travelers. Ask: "Would someone planning or currently
@@ -100,7 +111,7 @@ travelRelevant=true (keep these):
 - Mass casualty events or ongoing security operations
 - Infrastructure failures affecting a city or region (power grid collapse, telecom outage)
 - Events that change the risk profile of an area (new travel advisory, martial law, airspace closure)
-- Elections, leader visits, state visits — low impact but relevant context for travelers (severity 1-2)
+- Elections, leader visits, state visits — category civil_unrest, severity 1 unless confirmed disruption
 
 ## What counts as analysis (isAnalysis=true)
 
@@ -139,6 +150,19 @@ The "transport" category covers anything that affects travel logistics. This inc
 Border/visa guides ARE relevant as transport events — they provide actionable travel info.
 Example: "Kuwait–Saudi Arabia border crossing: open with visa on arrival" → transport, sev=1
 
+## Category: infrastructure
+
+Infrastructure covers PHYSICAL systems and facilities:
+- Power/energy systems, oil/gas pipelines, refineries
+- Telecom/internet shutdowns or outages
+- Water supply disruptions
+- Embassy/consulate closures, relocations
+- Border facility disruptions (physical facility damage, not policy changes)
+- Critical supply chain disruptions
+
+NOT infrastructure: government formation, political appointments, forex markets,
+social media policy, sports events. These belong in civil_unrest or are not relevant.
+
 ## Location fields
 
 You output THREE location-related fields:
@@ -168,11 +192,15 @@ BAD examples (will geocode to wrong places):
 - "Karaj" alone → matches Krajné, Slovakia
 
 ### expectedCountryCodes
-ISO 3166-1 alpha-2 codes (uppercase) for countries this event is about.
-Used to validate that the geocoder returned a result in the right country.
-- Iran → ["IR"], Israel → ["IL"], Turkey → ["TR"], Iraq → ["IQ"]
-- Multi-country events → ["IR", "IQ"] etc.
-- Always provide at least one code when the country is known.
+ISO 3166-1 alpha-2 codes for countries DIRECTLY AFFECTED by this event.
+Only include countries where the event is physically happening or directly impacting.
+
+DO: "Protests in India" → ["IN"]
+DO: "Earthquake hits Turkey and Syria" → ["TR", "SY"]
+DON'T: "India protests about Iran assassination" → only ["IN"], do NOT add "IR", "US", "IL"
+DON'T: "US sanctions on Russia" → only include countries with physical disruption
+
+Always provide at least one code when the country is known.
 
 Ignore scheduled events, advertisements, and general news.
 Focus on actionable situational awareness information.`;

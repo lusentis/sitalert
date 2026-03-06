@@ -161,11 +161,20 @@ const SEVERITY_TTL_HOURS: Record<number, number> = {
   5: 336, // 14 days
 };
 
+const EXTERNAL_SEVERITY_TTL_HOURS: Record<number, number> = {
+  1: 336,  // 14 days
+  2: 336,  // 14 days
+  3: 720,  // 30 days
+  4: 1440, // 60 days
+  5: 1440, // 60 days
+};
+
 export async function resolveExpiredSituations(
   db: DbClient,
 ): Promise<number> {
   const now = Date.now();
-  const result = await db
+  // Internal situations (no externalId)
+  const internal = await db
     .update(situations)
     .set({ status: "resolved" as const, updatedAt: new Date() })
     .where(
@@ -183,7 +192,26 @@ export async function resolveExpiredSituations(
     )
     .returning();
 
-  return result.length;
+  // External situations (have externalId) — longer TTLs
+  const external = await db
+    .update(situations)
+    .set({ status: "resolved" as const, updatedAt: new Date() })
+    .where(
+      and(
+        eq(situations.status, "active"),
+        sql`${situations.externalId} IS NOT NULL`,
+        sql`${situations.lastUpdated} < CASE ${situations.severity}
+          WHEN 1 THEN ${new Date(now - EXTERNAL_SEVERITY_TTL_HOURS[1] * 3600_000)}::timestamptz
+          WHEN 2 THEN ${new Date(now - EXTERNAL_SEVERITY_TTL_HOURS[2] * 3600_000)}::timestamptz
+          WHEN 3 THEN ${new Date(now - EXTERNAL_SEVERITY_TTL_HOURS[3] * 3600_000)}::timestamptz
+          WHEN 4 THEN ${new Date(now - EXTERNAL_SEVERITY_TTL_HOURS[4] * 3600_000)}::timestamptz
+          ELSE ${new Date(now - EXTERNAL_SEVERITY_TTL_HOURS[5] * 3600_000)}::timestamptz
+        END`,
+      ),
+    )
+    .returning();
+
+  return internal.length + external.length;
 }
 
 const SEVERITY_DECAY_HOURS: Record<number, number> = {
