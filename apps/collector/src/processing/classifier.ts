@@ -109,7 +109,8 @@ travelRelevant=false (reject these):
 - Diplomatic ceremonies, treaty signings, consular restorations — no disruption
 - Weather records that don't cause disruption (hottest day, UV index) — only actual severe weather events
 - Paralympic/Olympic boycotts, ceremony protests — political gesture, no travel impact
-- Death or illness of political figures — unless it triggers unrest or succession crisis
+- Death or illness of political figures — UNLESS in a dictatorship, unstable regime, or context where
+  it could trigger unrest, succession crisis, or power vacuum (e.g., death of a dictator → keep as civil_unrest)
 
 travelRelevant=true (keep these):
 - Armed conflicts, military operations, terrorist attacks — any scale
